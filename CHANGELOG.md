@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-11-20
+
+- Mainnet activation height set to block 6,466,500 (§2), just above the 2026-11-20 tip of 6,466,091. Testnet remains unset; regtest unchanged.
+
 ## 0.2.0 — 2026-11-20
 
 Experimental-state corrections, deliberately incompatible with the earlier source-audit profile; reindex before using this profile. Mainnet/testnet activation remains unset and off.

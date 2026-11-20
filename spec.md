@@ -1,7 +1,7 @@
 # Dalkanes specification
 
-**Version:** 0.2 (draft)
-**Status:** Experimental. The reference indexer implements this version and its unit tests pass; remaining gaps are listed in [IMPLEMENTATION.md](IMPLEMENTATION.md). No live-chain replay or mainnet activation is claimed.
+**Version:** 0.2.1 (draft)
+**Status:** Experimental. The reference indexer implements this version and its unit tests pass; remaining gaps are listed in [IMPLEMENTATION.md](IMPLEMENTATION.md). Mainnet activation is pinned at block 6,466,500 (§2). No live-chain replay is claimed.
 **Carrier:** `OP_RETURN` payload beginning `0xD1 0x01`
 **License:** MIT
 
@@ -29,11 +29,16 @@ Dalkanes does not attach assets to UTXOs. Contract balances live in a host ledge
 ## 2. Activation
 
 - Indexers MUST NOT process Dalkanes deploys or calls in blocks below the **activation height** for their network.
-- On mainnet and testnet the activation height is a constant of this spec. It is **not yet set**, so Dalkanes is disabled there (the reference uses `u32::MAX`). Indexers MUST NOT let an operator setting move it; the reference ignores its activation environment variable on these networks.
+- On mainnet and testnet the activation height is a constant of this spec. Indexers MUST NOT let an operator setting move it; the reference ignores its activation environment variable on these networks.
 - Regtest defaults to height `0` and MAY be overridden for development.
-- A future version of this spec will publish the activation height. Until then no indexer should report Dalkanes state for mainnet or testnet.
 
-No launch height is published here.
+| Network | Activation height | Notes |
+| --- | --- | --- |
+| Mainnet | **6,466,500** | Chosen 2026-11-20 just above the tip at the time (6,466,091). Blocks ≥ 6,466,500 are processed; 6,466,499 and below are not. |
+| Testnet | not set | Disabled (the reference uses `u32::MAX`). A future version will publish it. |
+| Regtest | `0` | Overridable for development only. |
+
+Mainnet has no Dalkanes state below 6,466,500; an indexer starts empty at that block.
 
 ## 3. Identifiers
 
@@ -369,7 +374,7 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 | Fuel budget | 100M per block, split by vsize, 90k minimum per message | 5M per call, no block budget | Simpler. A block budget is on the roadmap (§15). |
 | Contract ABI | `__execute`, `__request_context` / `__load_context`, `__request_storage` / `__load_storage`, `__call` / `__staticcall` / `__delegatecall`, `__returndatacopy`, … | `__dalk_execute(ptr, len)`, plus the `env` imports in §7 | Smaller ABI. ALKANES contracts must be ported. |
 | Genesis contracts | DIESEL at `[2,0]` | No hard-coded genesis installation found. Templates are ordinary deploys. | No equivalent bootstrap implementation |
-| Activation | Block 880,000 | Spec constant, not yet set (§2) | |
+| Activation | Block 880,000 | Mainnet block 6,466,500 (spec constant, §2); testnet not set | |
 
 ## 15. Reserved and future work *(informative)*
 
@@ -378,7 +383,7 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 - Asset transfer into calls, for example through Dunes or a native parcel format. This would fill the `incoming_*` imports on chain.
 - Factory and clone deploys, and deterministic reserved ids.
 - Module validation at deploy, and a float-free instruction subset.
-- Publishing the mainnet and testnet activation heights (§2).
+- Publishing the testnet activation height (§2).
 - Restoring a stored empty value exactly on reorg (§11).
 
 ---
