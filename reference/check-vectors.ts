@@ -28,4 +28,12 @@ for (const v of wire.cellpacks) {
     console.log(`${ok ? 'ok  ' : 'FAIL'} ${v.name} ${what}${ok ? '' : `: got ${got} want ${want}`}`);
   }
 }
+const parser = JSON.parse(readFileSync(new URL('../vectors/parser.json', import.meta.url), 'utf8'));
+for (const v of parser.cases) {
+  const cp = parseCallScript(hexToBytes(v.script_hex));
+  const ok = (cp !== null) === v.valid && (!v.valid ||
+    (`${cp!.targetBlock}:${cp!.targetTx}` === v.target && cp!.fuel.toString() === v.fuel));
+  if (!ok) failed++;
+  console.log(`${ok ? 'ok  ' : 'FAIL'} parser ${v.name}`);
+}
 process.exit(failed ? 1 : 0);

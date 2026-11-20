@@ -1,7 +1,7 @@
 # Dalkanes specification
 
-**Version:** 0.1 (draft)
-**Status:** Experimental reference profile; known implementation defects are listed in [IMPLEMENTATION.md](IMPLEMENTATION.md). No live-chain verification is claimed.
+**Version:** 0.2 (draft)
+**Status:** Experimental. The reference indexer implements this version and its unit tests pass; remaining gaps are listed in [IMPLEMENTATION.md](IMPLEMENTATION.md). No live-chain replay or mainnet activation is claimed.
 **Carrier:** `OP_RETURN` payload beginning `0xD1 0x01`
 **License:** MIT
 
@@ -13,7 +13,7 @@ Sections marked *(informative)* are guidance. Everything else is normative.
 
 ## 1. Overview
 
-Dalkanes is an indexer-level metaprotocol. It adds deterministic WebAssembly contracts to Dogecoin without changing Dogecoin consensus. The design goal is state reproducible from the Dogecoin chain and a pinned execution profile. Independent implementations MUST pin the same activation and fuel schedule before comparing state. This draft is not a declaration of a production-ready consensus standard; unresolved differences are listed in IMPLEMENTATION.md.
+Dalkanes is an indexer-level metaprotocol. It adds deterministic WebAssembly contracts to Dogecoin without changing Dogecoin consensus. The design goal is state reproducible from the Dogecoin chain and a pinned execution profile. The activation height, fuel cap and interpreter version are spec constants (§2, §6.2), not operator settings. This draft is not a declaration of a production-ready consensus standard; open items are listed in IMPLEMENTATION.md.
 
 The protocol has three on-chain actions and one off-chain action:
 
@@ -29,11 +29,11 @@ Dalkanes does not attach assets to UTXOs. Contract balances live in a host ledge
 ## 2. Activation
 
 - Indexers MUST NOT process Dalkanes deploys or calls in blocks below the **activation height** for their network.
-- The reference implementation defaults mainnet and testnet to disabled (`u32::MAX`), with an operator activation-height override.
-- Regtest defaults to height `0`. The protocol filter must also enable the lane.
-- Reproducible replay MUST record the network, activation height, runtime version, fuel cap and source revision. Operator settings are not a network-wide activation agreement.
+- On mainnet and testnet the activation height is a constant of this spec. It is **not yet set**, so Dalkanes is disabled there (the reference uses `u32::MAX`). Indexers MUST NOT let an operator setting move it; the reference ignores its activation environment variable on these networks.
+- Regtest defaults to height `0` and MAY be overridden for development.
+- A future version of this spec will publish the activation height. Until then no indexer should report Dalkanes state for mainnet or testnet.
 
-No launch height is published here. No inference about live deployments should be drawn from the disabled default.
+No launch height is published here.
 
 ## 3. Identifiers
 
@@ -66,10 +66,10 @@ Content type `application/wasm` is RECOMMENDED.
 
 For a candidate body `B`:
 
-1. **Locate the start.** If `B` begins with `\0ALK` or `\0asm`, start at offset 0. Otherwise start at the first offset where either sequence occurs. If neither occurs, this is not a deploy. (This tolerates envelope parsers that leave stray prefix bytes. Encoders MUST NOT rely on it.)
+1. **Locate the start.** If `B` begins with `\0ALK`, `\0asm` or the gzip magic `1F 8B`, start at offset 0. Otherwise start at the first offset where either sequence occurs. If neither occurs, this is not a deploy. (This tolerates envelope parsers that leave stray prefix bytes. Encoders MUST NOT rely on it.)
 2. **Framing.** Call the slice from that point `S`. If `S` begins with `\0ALK` and is at least 5 bytes long, byte 4 is the deploy version and the payload is `S[5..]`. If the version is not `0x01`, this is not a deploy. Otherwise the payload is `S`.
 3. **Decompression.** If the content type contains `gzip`, or the payload begins with `1F 8B`, the payload MUST be gzip-inflated. If inflation fails, this is not a deploy.
-4. **Checks.** The result is the **code**. It MUST be 4 to 524,288 bytes long (512 KiB) and MUST begin with `\0asm`. Otherwise this is not a deploy. Indexers SHOULD stop inflating after 524,289 output bytes rather than inflating unbounded input.
+4. **Checks.** The result is the **code**. It MUST be 4 to 524,288 bytes long (512 KiB) and MUST begin with `\0asm`. Otherwise this is not a deploy. Indexers MUST stop inflating after 524,289 output bytes (one past the cap) and treat the body as not a deploy, rather than inflating unbounded input.
 
 Encoders SHOULD emit one of these exact forms:
 
@@ -81,10 +81,10 @@ Encoders SHOULD emit one of these exact forms:
 
 On a valid deploy in transaction index `i` of block `H`:
 
-- If AlkaneId `(H, i)` already has code, the deploy is ignored. The intended first-valid-deploy rule is not reliably enforced within an uncommitted block batch; see IMPLEMENTATION.md.
+- **First valid deploy wins.** If AlkaneId `(H, i)` already has code, including code deployed earlier in the same block or by an earlier inscription in the same transaction, the deploy is ignored. A transaction creates at most one contract.
 - Otherwise store the code under `(H, i)`, and record `code_hash = SHA-256(code)` in lowercase hex along with the metadata in [schemas/deploy-meta.schema.json](schemas/deploy-meta.schema.json).
 
-v0.1 does **not** validate the module at deploy time. A body that passes §4.2 but is not a loadable module is still stored. Every call to it fails at instantiation (§6.3) and gets a failure receipt.
+This version does **not** validate the module at deploy time. A body that passes §4.2 but is not a loadable module is still stored. Every call to it fails at instantiation (§6.3) and gets a failure receipt.
 
 A deploy does not execute anything. Contracts initialise themselves on their first call, conventionally opcode `0`.
 
@@ -120,11 +120,11 @@ target_block  target_tx  fuel  n_inputs  input[0] … input[n_inputs-1]
 
 Decoding rules:
 
-- A truncated varint, or one whose value does not fit in u128, makes the cellpack invalid.
-- `n_inputs` MUST be ≤ 256. Otherwise the cellpack is invalid.
+- **Varints.** A varint is at most 19 bytes. A truncated varint, a 19th byte with the continuation bit set, or a 19th byte whose low 7 bits exceed `0x03` (a value past 2^128 − 1) makes the cellpack invalid. Non-minimal encodings that still fit are accepted; writers SHOULD emit minimal ones.
+- **Ranges.** `target_block` MUST be ≤ 2^64 − 1 and `target_tx` ≤ 2^32 − 1, or the cellpack is invalid. Values are never truncated.
+- `n_inputs` MUST be ≤ 256, compared on the full decoded value. Otherwise the cellpack is invalid. Every listed input MUST be present.
+- `fuel` above 2^64 − 1 saturates to 2^64 − 1 (it is clamped to `MAX_FUEL` anyway, §6.2).
 - Bytes after the last input are ignored.
-- After reading u128 varints the reference decoder narrows `target_block` to u64, `target_tx` to u32, `fuel` to u64, and `n_inputs` to native `usize`, using truncating Rust casts. The input-count cap is checked **after** this conversion. Independent decoders reproducing this profile MUST use the same conversions (64-bit `usize` on the audited host). Writers SHOULD NOT exceed the destination ranges. This is a compatibility description, not recommended new-protocol validation.
-- The shared varint helper accepts non-minimal encodings. Its final-group high-bit overflow handling is not a complete u128 range check; see IMPLEMENTATION.md. Restrict writers to canonical u128 encodings.
 - `fuel` is the caller's requested fuel. See §6.2.
 
 If the cellpack is invalid, the transaction has no Dalkanes effect and gets no receipt.
@@ -135,7 +135,7 @@ The **calldata** passed to the guest is the inputs, each as a 16-byte little-end
 
 ### 5.4 Target resolution
 
-If no code exists for `(target_block, target_tx)` when the call is processed (§6.1), the call is ignored and gets no receipt.
+A call in transaction `j` of block `H` can see a contract deployed in an earlier block, or deployed in block `H` by a transaction with index ≤ `j` (so a transaction can deploy and call the same contract). If no visible code exists for `(target_block, target_tx)`, the call is ignored and gets no receipt. The same visibility rule applies to targets of nested calls (§7.6).
 
 ## 6. Execution
 
@@ -146,25 +146,25 @@ Within a block, indexers MUST apply effects in this order:
 1. Deploys, in the order the inscriptions indexer reveals them.
 2. Calls, in transaction-index order.
 
-**Current reference visibility:** all reads use the pre-block database, while writes are queued in a single block `WriteBatch`. Calls therefore do **not** see same-block deploys or previous calls' staged writes. Conflicting writes to a key in that batch are last-write-wins. A compatible replay MUST preserve that visibility until a versioned correction is agreed. Sequential visibility is the desired fix, not an implemented feature.
+**Sequential visibility.** Calls execute one at a time in transaction-index order. Each call sees the state left by every earlier call in the same block: storage, ledger balances, and same-block deploys subject to §5.4. Equivalently, a block's calls produce the same state as committing each call before running the next. The reference keeps an in-block overlay in front of the database and commits the block atomically.
 
 ### 6.2 Fuel
 
-- Default `MAX_FUEL` = **5,000,000**, overridable by the operator in the reference implementation. Indexers comparing results MUST agree on the override.
-- Fuel granted = `max(1, min(fuel, MAX_FUEL))`, after `fuel` is narrowed by truncation to u64.
-- Instruction fuel uses `wasmi` with `consume_fuel` enabled. “1.x” alone does not pin a fuel schedule. The exact dependency version and instruction costs MUST be fixed in a future reproducibility profile; no cross-version conformance is claimed here.
+- `MAX_FUEL` = **5,000,000** per top-level call. It is a constant; there is no operator override.
+- Fuel granted = `max(1, min(fuel, MAX_FUEL))`.
+- Instruction fuel is the default fuel schedule of **`wasmi` 1.1.0** with `consume_fuel` enabled. The interpreter version is part of this spec: the reference pins the exact version (`wasmi = "=1.1.0"`), and changing it is a protocol change. Another implementation MUST reproduce wasmi 1.1.0's fuel accounting exactly.
 - Host functions charge the extra fuel listed in §7. If a host charge exceeds the remaining fuel, that is a fatal host error (§6.4).
-- There is no per-block fuel budget in v0.1.
+- There is no per-block fuel budget in this version.
 
 ### 6.3 Steps
 
 For each call, an indexer MUST:
 
-1. Load the target's storage map. If it has more than **8,192** keys, the call fails with no execution.
+1. Read state lazily as the guest asks for it. There is no cap on how many keys a contract has; only the per-frame write cap (§6.4) applies.
 2. Instantiate the module with only the `env` imports in §7. Importing anything else, failing validation, or lacking an exported `memory` or `__dalk_execute (i32, i32) -> i32` export makes the call fail. A start function, if present, runs under the same fuel.
 3. Write the calldata into exported `memory` at offset **`0x1000`** (4096). If memory is too small, the call fails.
 4. Invoke `__dalk_execute(0x1000, calldata_len)`.
-5. The call **succeeds** if and only if the export returns `0`, did not trap, and no fatal host error occurred. Then commit the staged storage writes into the target's storage and the staged ledger writes into the host ledger, atomically.
+5. The call **succeeds** if and only if the export returns `0`, did not trap, and no fatal host error occurred. Then commit, atomically, every contract's staged storage writes under that contract's own id (the target's and those of contracts reached through `call`, §7.6) and the staged ledger writes.
 6. Otherwise, including a non-zero return, a trap or running out of fuel, discard every staged write.
 7. Record a receipt (§9) on both success and failure.
 
@@ -187,31 +187,34 @@ These make the call fail even if `__dalk_execute` later returns `0`:
 | `alkane_time` | Block header `nTime` (unix seconds) |
 | `alkane_myself_*` | Target AlkaneId |
 | `alkane_caller_*` | `0:0` |
-| `alkane_value` | Attached value, see below |
+| `alkane_value` | Koinu value of the carrier output, see below |
+| `alkane_sender` | Verified sender, see below |
 | `incoming_*` | Empty list |
 
-**Attached value.** Take the values, in koinu, of the call transaction's outputs that are not `OP_RETURN` and are greater than zero. If there are two or more, `alkane_value` is the sum of all of them except one output with the largest value. If there is exactly one, it is that value. If there are none, it is `0`.
+**Attached value.** `alkane_value` is the value, in koinu, of the carrier output itself: the `0xD1` `OP_RETURN` output that holds the call (§5.1). That DOGE is provably burned. No other output counts. Most calls carry 0.
 
-> **Security note.** Attached value is a heuristic, not custody. The DOGE stays wherever the transaction sent it, and nothing binds it to the contract. Contracts MUST NOT treat `alkane_value` as funds they control.
+> **Security note.** A contract never receives or controls DOGE. `alkane_value` proves the caller burned that much with the call, nothing more; any payout a contract makes is a host-ledger balance (§8), never DOGE. Dogecoin Core relays `OP_RETURN` outputs with a non-zero value under default policy, but wallets may refuse to build them.
 
-**Incoming parcels.** Normally empty on chain; simulations can supply them. The reference updater has one code-hash exception: for its exact dice template, a positive attached value is converted to the synthetic parcel `(0,0,value)`. It is not evidence of an actual asset deposit. Reproducibility requires pinning that template hash; the general parcel layer remains unimplemented.
+**Verified sender.** If input 0 of the call transaction is a standard P2PKH spend, meaning its `scriptSig` is exactly two pushes `<sig> <pubkey>` with a 33-byte compressed or 65-byte uncompressed key, and the signature verifies under the legacy sighash for input 0 with a P2PKH script code for that key, and the signature's hash type has base type `SIGHASH_ALL` (`0x01`, optionally with `ANYONECANPAY` `0x80`), then the sender is `HASH160(pubkey)`, the 20-byte payload of that Dogecoin address. Otherwise there is no sender. `SIGHASH_ALL` commits to every output, including the carrier, so only the key holder can make a call that names them. Signature checking follows Dogecoin's (lax DER, low-S normalised before verification). A nested call never has a sender.
+
+**Incoming parcels.** Always empty on chain; simulations can supply them. There are no code-hash exceptions.
 
 ### 6.6 Determinism requirements
 
 - The interpreter MUST be deterministic and MUST NOT expose clocks, randomness, network or filesystem access.
-- Contracts SHOULD NOT use floating-point instructions. v0.1 does not forbid them. A future version may reject modules that use them.
-- The existing dice code-hash exception above is implementation-specific and SHOULD be removed or versioned before interoperability is claimed.
+- Contracts SHOULD NOT use floating-point instructions. This version does not forbid them. A future version may reject modules that use them.
+- Execution MUST NOT depend on a contract's code hash.
 
 ## 7. Host ABI (`env` module)
 
-Pointers and lengths are `i32`. A negative length is treated as 0. Out-of-bounds guest memory access returns the function error value (or silently returns for void imports); a preceding fuel charge can still take effect. Nested-call write merging currently precedes return-buffer validation, as noted in IMPLEMENTATION.md. Ids passed as `i64` are clamped below at 0. `tx` values are then truncated to u32.
+Pointers and lengths are `i32`. A negative length is treated as 0. Out-of-bounds guest memory access returns the function error value (or silently returns for void imports); a preceding fuel charge can still take effect. For a successful `call`, the child's staged writes are adopted before its return data is copied out; if that copy is out of bounds, `call` returns −1 but the writes stay staged. Ids passed as `i64` MUST satisfy `block ≥ 0` and `0 ≤ tx ≤ 2^32 − 1`; otherwise the import returns its error value (−1 for `ledger_get`, `staticcall` and `call`; 0 for `ledger_mint` and `ledger_transfer`). Ids are never clamped or truncated.
 
 ### 7.1 Storage
 
 | Import | Signature | Fuel | Behavior |
 | --- | --- | --- | --- |
-| `storage_get` | `(key_ptr, key_len, out_ptr, out_max) -> i32` | 1,000 + key_len | `key_len` > 256: returns −1, no charge. Reads the frame's staged value for the key, else the stored value. A missing key reads as empty. Writes `min(len, out_max)` bytes and returns that count. So a missing or empty key returns `0`. |
-| `storage_set` | `(key_ptr, key_len, val_ptr, val_len)` | 1,000 + key_len + val_len | `key_len` > 256 or `val_len` > 4,096: silent no-op, no charge. Otherwise stages the write. A 513th distinct key is fatal. A zero-length value is stored as present-but-empty, and counts toward the 8,192-key cap. |
+| `storage_get` | `(key_ptr, key_len, out_ptr, out_max) -> i32` | 1,000 + key_len | `key_len` > 256: returns −1, no charge. Reads, in order: the value staged for this contract earlier in the same top-level call (including by nested calls), the stored value as of the start of the call (§6.1), else empty. A missing key reads as empty. Writes `min(len, out_max)` bytes and returns that count. So a missing or empty key returns `0`. |
+| `storage_set` | `(key_ptr, key_len, val_ptr, val_len)` | 1,000 + key_len + val_len | `key_len` > 256 or `val_len` > 4,096: silent no-op, no charge. Otherwise stages the write. A 513th distinct key is fatal. A zero-length value is stored as present-but-empty. |
 
 Storage is per contract. The persistent key is `AlkaneId (12 bytes) ‖ key`.
 
@@ -230,10 +233,13 @@ Storage is per contract. The persistent key is `AlkaneId (12 bytes) ‖ key`.
 | `alkane_tx` | `() -> i64` | 0 |
 | `alkane_time` | `() -> i64` | 0 |
 | `alkane_value` | `() -> i64` | 0 |
+| `alkane_sender` | `(out_ptr) -> i32` | 1,000 |
 | `alkane_myself_block`, `alkane_myself_tx` | `() -> i64` | 0 |
 | `alkane_caller_block`, `alkane_caller_tx` | `() -> i64` | 0 |
 | `incoming_count` | `() -> i32` | 0 |
 | `incoming_get` | `(i, out_ptr) -> i32` | 0 |
+
+`alkane_sender` writes the 20-byte verified sender (§6.5) at `out_ptr` and returns 20. It returns −1 if there is no verified sender, in a nested call, or if the write is out of bounds.
 
 `incoming_get` writes 32 bytes: `token_block` (u64 LE), `token_tx` (u64 LE, zero-extended), `amount` (u128 LE). It returns 32, or −1 if `i` is out of range.
 
@@ -244,7 +250,7 @@ Storage is per contract. The persistent key is `AlkaneId (12 bytes) ‖ key`.
 | `sha256` | `(ptr, len, out_ptr) -> i32` | 2,000 | Hashes `min(len, 65536)` bytes and writes the 32-byte digest. Returns 32 or −1. |
 | `verify_schnorr` | `(msg32_ptr, pk32_ptr, sig64_ptr) -> i32` | 25,000 | BIP-340 verification of a 64-byte signature over a 32-byte message with an x-only key. Returns 1 if valid, else 0. |
 
-Top-level calls are **anonymous**: nothing tells a contract which key or address sent the transaction. A contract that needs authorisation MUST check it itself, for example by having the caller sign a domain-separated message and calling `verify_schnorr`.
+A contract that needs authorisation MUST check it itself. It can use `alkane_sender` (§6.5), which ties the call to a Dogecoin key, or have the caller sign a domain-separated message and call `verify_schnorr`. A call without a verified sender is anonymous.
 
 ### 7.5 Host ledger
 
@@ -254,14 +260,14 @@ See §8 for the data model. Amounts are passed as two `i64` halves, `amount = (u
 | --- | --- | --- | --- |
 | `ledger_get` | `(token_b: i64, token_tx: i64, acct_ptr, acct_len, out_ptr) -> i32` | 3,000 | Writes the 16-byte LE balance and returns 16, or −1 |
 | `ledger_mint` | `(token_b, token_tx, to_ptr, to_len, lo: i64, hi: i64) -> i32` | 3,000 | Returns 0 unless `myself == token` and amount > 0. Adds to the balance, saturating, and returns 1. |
-| `ledger_transfer` | `(token_b, token_tx, from_ptr, from_len, to_ptr, to_len, lo: i64, hi: i64) -> i32` | 3,000 | Returns 0 unless `myself == token`, amount > 0, and `from` balance ≥ amount. Stages `from_balance - amount` and then `to_balance.saturating_add(amount)`, returning 1. If `from == to`, the second write overwrites the debit and increases the balance; this is a known defect, not a safe transfer primitive. |
+| `ledger_transfer` | `(token_b, token_tx, from_ptr, from_len, to_ptr, to_len, lo: i64, hi: i64) -> i32` | 3,000 | Returns 0 unless `myself == token`, amount > 0, and `from` balance ≥ amount. Otherwise returns 1. If `from == to` it stages nothing (the balance is unchanged); else it stages `from_balance - amount` and `to_balance.saturating_add(amount)`. |
 
 ### 7.6 Nested calls
 
 | Import | Signature | Behavior |
 | --- | --- | --- |
 | `staticcall` | `(tgt_b: i64, tgt_tx: i64, cd_ptr, cd_len, out_ptr, out_max, fuel: i64) -> i32` | Runs the target. Its writes are discarded. |
-| `call` | same | Runs the target. On success, its writes merge into the calling frame. |
+| `call` | same | Runs the target. On success, its staged writes become part of the caller's staged state. |
 
 Rules for both:
 
@@ -269,10 +275,10 @@ Rules for both:
 - The base charge is 10,000 fuel, and running short is fatal. After it, the child gets `max(1, min(remaining, fuel))`, and the fuel the child uses is deducted from the caller.
 - Calldata is the `min(cd_len, 16384)` bytes at `cd_ptr`. They are passed raw, not re-encoded.
 - Child context: `myself` = target, `caller` = the calling contract, `alkane_block` and `alkane_time` inherited, `alkane_tx` = 0, `alkane_value` = 0, `incoming` empty.
-- The child sees the caller frame's staged ledger writes. Its storage, however, is resolved from a pre-block database catalog, not an overlay of earlier staged writes.
+- The child sees everything staged so far in the top-level call: ledger writes, and storage writes for every contract (including its own, from earlier nested calls). Below that it reads state as of the start of the call (§6.1). The target must be visible under §5.4.
 - If the target does not exist, or the child fails, the nested call returns −1 and the child has no effect.
 - On success it writes `min(len, out_max)` bytes of the child's return data to `out_ptr` and returns that count. The caller frame's pending return data is replaced by the child's, until the caller sets its own.
-- `call` only: the reference runtime merges child storage writes as unqualified keys into the parent's write map. The updater prefixes all of them with the **top-level target** id. This is a namespace-isolation defect, not safe child-state semantics. Child ledger writes keep their full keys. All staged changes commit only if the top-level call succeeds. Production mutating cross-contract calls SHOULD NOT be used before this is corrected.
+- Storage writes are staged per contract: a child's writes always belong to the child's own id, and the caller's to the caller's. On a successful `call` the caller adopts the child's staged state; after a `staticcall`, or a failed child, the child's writes are discarded. Each frame has its own 512-distinct-key write cap (§6.4). Everything staged commits only if the top-level call succeeds (§6.3).
 
 ## 8. Host ledger
 
@@ -285,7 +291,8 @@ value = balance, u128 little-endian (16 bytes)
 
 - A zero balance is the same as an absent key. Indexers SHOULD delete zero entries.
 - Only contract `T` can mint or transfer balances under token `T`. Contracts can read any balance.
-- **Account bytes are opaque.** The protocol does not tie them to Dogecoin addresses, keys or UTXOs. A token contract defines what an account is, and MUST enforce who can move it. A token whose `transfer` takes `from` from calldata without a signature check lets anyone move anyone's balance. The current token demonstration template does exactly that and is not safe for value-bearing use.
+- **Account bytes are opaque.** The protocol does not tie them to Dogecoin addresses, keys or UTXOs. A token contract defines what an account is, and MUST enforce who can move it. A token whose `transfer` takes `from` from calldata without an authorisation check lets anyone move anyone's balance.
+- *(Informative)* The reference token template (`dalkanes-token-v1`) uses the 20-byte verified sender (§6.5) as the account, so an account is a Dogecoin P2PKH address and only its key can spend it. Accounts are passed in calldata as two cells, bytes 0–15 as a u128 and bytes 16–19 as a u32, both little-endian.
 
 ## 9. Receipts
 
@@ -303,7 +310,7 @@ Dalkanes has no cenotaphs. Because it carries no UTXO-bound assets, a malformed 
 | Cellpack fails §5.2 | No effect, no receipt |
 | Target has no code | No effect, no receipt |
 | Below activation height | No effect, no receipt |
-| Storage over cap, instantiation error, trap, out of fuel, non-zero status, fatal host error | Receipt with `ok: false`, no state change |
+| Instantiation error, trap, out of fuel, non-zero status, fatal host error | Receipt with `ok: false`, no state change |
 | Deploy that fails §4.2 | Ordinary inscription, no contract |
 
 The Dogecoin transaction itself is always valid or invalid by Dogecoin's own rules. DOGE moves as the transaction says, whatever happens to the Dalkanes message.
@@ -323,7 +330,6 @@ The Dogecoin transaction itself is always valid or invalid by Dogecoin's own rul
 | Code size after inflation | 4 B – 512 KiB |
 | Cellpack inputs | ≤ 256 (≤ 78 bytes total for default relay) |
 | `MAX_FUEL` per top-level call | 5,000,000 |
-| Storage keys loaded per contract | ≤ 8,192 |
 | Distinct storage writes per frame | ≤ 512 |
 | Storage key / value | 256 B / 4,096 B |
 | Return data | 16,384 B |
@@ -333,7 +339,7 @@ The Dogecoin transaction itself is always valid or invalid by Dogecoin's own rul
 | Nested-call calldata | 16,384 B |
 | Ledger account | 1–32 B |
 
-Host fuel: storage op 1,000 + 1 per byte, `sha256` 2,000, `verify_schnorr` 25,000, ledger op 3,000, nested-call base 10,000.
+Host fuel: storage op 1,000 + 1 per byte, `sha256` 2,000, `verify_schnorr` 25,000, `alkane_sender` 1,000, ledger op 3,000, nested-call base 10,000.
 
 ## 13. Conventions *(informative)*
 
@@ -355,15 +361,15 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 | --- | --- | --- | --- |
 | Host for messages | Protostones inside a Runestone (protorunes, protocol tag `1`) | Standalone `OP_RETURN` with `0xD1` | Dogecoin has no Runes, so there is no Runestone to embed in |
 | Deploy carrier | Gzipped WASM in a Taproot witness envelope, plus a `[1,0]` / `[3,n]` cellpack | Doginals inscription (P2SH `scriptSig`) | No Taproot or witness on Dogecoin. Doginals is the established data carrier. |
-| Contract ids | `[2, n]` by sequence, `[4, n]` reserved, `[5,n]` / `[6,n]` clone | `block:tx` of the deploy | Simple and Runes-style. Factory and clone ids were dropped in v0.1. |
+| Contract ids | `[2, n]` by sequence, `[4, n]` reserved, `[5,n]` / `[6,n]` clone | `block:tx` of the deploy | Simple and Runes-style. Factory and clone ids are not supported. |
 | Message size | Bitcoin `OP_RETURN`, much larger since Core 30 | ≤ 80-byte payload (78-byte cellpack) by default relay | Dogecoin Core policy |
 | Assets | Protorune balances bound to UTXOs, with edicts, pointer and refund pointer | Host ledger keyed by contract-defined accounts | No protorune host. A simpler model at the cost of UTXO-native transfers. |
-| Caller identity | Context with incoming parcels, plus the full transaction and block (`__load_transaction`, `__load_block`) | Anonymous top-level calls. Contracts verify Schnorr signatures. | No input-bound assets yet. A tx-context import is on the roadmap (§15). |
-| Runtime | `wasmi` fuel inside the METASHREW WASM indexer | `wasmi` 1.x fuel inside a native indexer | Same metering idea, no separate METASHREW process |
+| Caller identity | Context with incoming parcels, plus the full transaction and block (`__load_transaction`, `__load_block`) | `alkane_sender`: the P2PKH key that signed input 0 with `SIGHASH_ALL`; contracts can also verify Schnorr signatures | A signature and key do not fit in a 78-byte cellpack, so the transaction's own signature is the authorisation |
+| Runtime | `wasmi` fuel inside the METASHREW WASM indexer | `wasmi` 1.1.0 (pinned) fuel inside a native indexer | Same metering idea, no separate METASHREW process |
 | Fuel budget | 100M per block, split by vsize, 90k minimum per message | 5M per call, no block budget | Simpler. A block budget is on the roadmap (§15). |
 | Contract ABI | `__execute`, `__request_context` / `__load_context`, `__request_storage` / `__load_storage`, `__call` / `__staticcall` / `__delegatecall`, `__returndatacopy`, … | `__dalk_execute(ptr, len)`, plus the `env` imports in §7 | Smaller ABI. ALKANES contracts must be ported. |
 | Genesis contracts | DIESEL at `[2,0]` | No hard-coded genesis installation found. Templates are ordinary deploys. | No equivalent bootstrap implementation |
-| Activation | Block 880,000 | Operator configured; no network agreement claimed (§2) | |
+| Activation | Block 880,000 | Spec constant, not yet set (§2) | |
 
 ## 15. Reserved and future work *(informative)*
 
@@ -372,7 +378,8 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 - Asset transfer into calls, for example through Dunes or a native parcel format. This would fill the `incoming_*` imports on chain.
 - Factory and clone deploys, and deterministic reserved ids.
 - Module validation at deploy, and a float-free instruction subset.
-- Rejecting out-of-range cellpack ids (§5.2).
+- Publishing the mainnet and testnet activation heights (§2).
+- Restoring a stored empty value exactly on reorg (§11).
 
 ---
 
@@ -388,7 +395,7 @@ The reference indexer serves these routes. They are not part of consensus:
 | `GET /api/alkanes/{block}/{tx}/inspect` | ABI-aware read methods, for known templates |
 | `GET /api/alkanes/calls`, `GET /api/alkanes/calls/{txid}` | Receipts |
 | `GET /api/alkanes/ledger/{block}/{tx}/{account}` | Host-ledger balance |
-| `POST /api/alkanes/simulate` | Dry run. Accepts `value` and `incoming` overrides. |
+| `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides, and returns per-contract `contract_writes`. |
 | `POST /api/alkanes/build-call` | Builds a form-A `OP_RETURN` script |
 | `GET /api/alkanes/templates[/{name}]` | Reference contract templates |
 

@@ -1,6 +1,6 @@
 {
   "protocol": "dalkanes",
-  "spec_version": "0.1",
+  "spec_version": "0.2",
   "constants": {
     "op_return_magic_hex": "d1",
     "version_hex": "01",

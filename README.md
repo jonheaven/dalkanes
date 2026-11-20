@@ -2,16 +2,16 @@
 
 **WebAssembly smart contracts for Dogecoin, run by indexers.**
 
-Dalkanes (written Ðalkanes in some UIs) is a Dogecoin metaprotocol. Contracts are WebAssembly modules deployed as Doginals inscriptions. Calls are small `OP_RETURN` messages tagged with the byte `0xD1`. The design is to replay calls in a metered WASM interpreter without changing Dogecoin consensus. The reference implementation is real code, but it has serious state-isolation and asset-safety defects. See [IMPLEMENTATION.md](IMPLEMENTATION.md) before using it.
+Dalkanes (written Ðalkanes in some UIs) is a Dogecoin metaprotocol. Contracts are WebAssembly modules deployed as Doginals inscriptions. Calls are small `OP_RETURN` messages tagged with the byte `0xD1`. The design is to replay calls in a metered WASM interpreter without changing Dogecoin consensus. The reference implementation has tests for sequential state, nested storage isolation and sender-authorised token transfers, but it is still experimental. See [IMPLEMENTATION.md](IMPLEMENTATION.md) before using it.
 
 | | |
 | --- | --- |
-| Status | **Experimental draft v0.1.** Source audit only; not production-ready. |
+| Status | **Experimental draft v0.2.** Reference unit tests; not production-ready. |
 | Normative spec | [spec.md](spec.md) |
 | Carrier byte | `OP_RETURN` push `0xD1`, version `0x01` |
 | Deploy | Doginals inscription carrying WASM (raw, gzip, or `\0ALK\x01` framed) |
 | Contract id | `block:tx` of the deploy transaction |
-| Execution | Deterministic interpreter with fuel metering (reference: `wasmi` 1.x) |
+| Execution | Deterministic interpreter with fuel metering (reference: `wasmi` 1.1.0 (pinned)) |
 | License | [MIT](LICENSE) |
 
 ## Prior art and credit
@@ -41,11 +41,11 @@ Dalkanes is **inspired by** ALKANES. It is **not wire- or ABI-compatible**, and 
 
 | Role | Project | Notes |
 | --- | --- | --- |
-| Reference indexer | dogex (Rust, `wasmi` 1.x) | Not yet public. Implements deploy, calls, host ABI, host ledger and reorg undo. |
+| Reference indexer | dogex (Rust, `wasmi` 1.1.0 (pinned)) | Not yet public. Implements deploy, calls, host ABI, host ledger and reorg undo. |
 | Wallet | Dig | Builds and broadcasts `0xD1` calls; deploys WASM through Doginals inscriptions |
 | Explorers | dogexplorer, WatchDoge, doginals.lol | Decode `0xD1` calls and show contract pages |
 
-Independent replay, negative vectors, reorg tests and a pinned execution profile are needed before an interoperability claim. The audited implementation repositories are currently private; publishing this specification does not make their source public.
+Independent replay, complete reorg tests and a security audit are still needed before an interoperability claim. Negative parser vectors and a pinned interpreter/fuel profile are included in v0.2. The audited implementation repositories are currently private; publishing this specification does not make their source public.
 
 ## Origin
 

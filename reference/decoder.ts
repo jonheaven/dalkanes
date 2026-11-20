@@ -1,5 +1,5 @@
 /**
- * Dalkanes reference encoder and decoder for `0xD1` calls (spec v0.1, section 5).
+ * Dalkanes reference encoder and decoder for `0xD1` calls (spec v0.2, section 5).
  *
  * Dependency-free TypeScript that runs in browsers and Node 18+.
  * Ported from the Dig wallet and dogexplorer helpers. It follows the reference
@@ -88,7 +88,8 @@ export function decodeCellpack(bytes: Uint8Array): Cellpack | null {
     if (v === null) return null;
     inputs.push(v);
   }
-  return { targetBlock, targetTx, fuel, inputs };
+  if (targetBlock > U64_MAX || targetTx > U32_MAX) return null;
+  return { targetBlock, targetTx, fuel: fuel > U64_MAX ? U64_MAX : fuel, inputs };
 }
 
 /** Calldata as the guest sees it: each input as a 16-byte little-endian u128 (section 5.3). */
@@ -183,13 +184,12 @@ export function extractCall(outputScripts: Uint8Array[]): Cellpack | null {
 
 /* ------------------------------------------------------------- Attached value */
 
-/** Spec section 6.5 change heuristic. `outputs` are {value (koinu), isOpReturn}. */
-export function attachedValue(outputs: Array<{ value: bigint; isOpReturn: boolean }>): bigint {
-  const vals = outputs.filter((o) => !o.isOpReturn && o.value > 0n).map((o) => o.value);
-  if (vals.length === 0) return 0n;
-  if (vals.length === 1) return vals[0]!;
-  vals.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  return vals.slice(0, -1).reduce((s, v) => s + v, 0n);
+/** Spec section 6.5: koinu on the first valid Dalkanes carrier output (burned DOGE). */
+export function attachedValue(outputs: Array<{ value: bigint; script: Uint8Array }>): bigint {
+  for (const out of outputs) {
+    if (parseCallScript(out.script)) return out.value;
+  }
+  return 0n;
 }
 
 /* ------------------------------------------------------------------ Helpers */

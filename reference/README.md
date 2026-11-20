@@ -1,7 +1,7 @@
 # Reference helper
 
-`decoder.ts` handles the wire format only. It is not an indexer, not a WASM runtime, and not a full conformance implementation.
+`decoder.ts` handles the wire format only. It is not an indexer or a WASM runtime.
 
-It implements the `OP_RETURN` push layouts, cellpack encoding and decoding, and calldata layout. Unlike the audited Rust decoder, it rejects values outside the u128, u64 or u32 ranges instead of truncating them. Its results therefore differ from the current Rust implementation for out-of-range input.
+It mirrors dogex's v0.2 wire rules: required version byte, first valid output, checked u64:u32 ids, bounded u128 LEB128, fuel saturating to u64, at most 256 fully present inputs. `attachedValue` returns the value of the first valid carrier output (DOGE burned with the call).
 
-`check-vectors.ts` checks the helper against `../vectors/wire.json`. Those checks cover only the three sourced positive cellpack vectors. They do not cover deploy, execution, ledger, fees, reorgs or adversarial negative cases.
+Run `node --experimental-strip-types reference/check-vectors.ts` (Node 22.6+) or `npx tsx reference/check-vectors.ts`. It checks the positive encoding vectors and the positive/negative parser vectors. WASM execution, deploys, ledger and reorgs need the reference indexer's Rust tests; see [../IMPLEMENTATION.md](../IMPLEMENTATION.md).
