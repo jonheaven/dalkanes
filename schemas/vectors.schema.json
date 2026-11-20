@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jonheaven/dalkanes/schemas/vectors.schema.json",
+  "title": "Dalkanes wire vectors",
+  "type": "object",
+  "required": ["protocol", "spec_version", "cellpacks"],
+  "properties": {
+    "protocol": { "const": "dalkanes" },
+    "spec_version": { "type": "string" },
+    "constants": { "type": "object" },
+    "cellpacks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "source", "cellpack", "cellpack_hex", "script_hex"],
+        "properties": {
+          "name": { "type": "string" },
+          "source": { "type": "string" },
+          "cellpack": {
+            "type": "object",
+            "required": ["target_block", "target_tx", "fuel", "inputs"],
+            "properties": {
+              "target_block": { "type": "string", "pattern": "^[0-9]+$" },
+              "target_tx": { "type": "string", "pattern": "^[0-9]+$" },
+              "fuel": { "type": "string", "pattern": "^[0-9]+$" },
+              "inputs": { "type": "array", "maxItems": 256, "items": { "type": "string", "pattern": "^[0-9]+$" } }
+            }
+          },
+          "cellpack_hex": { "type": "string" },
+          "payload_hex": { "type": "string" },
+          "script_hex": { "type": "string" },
+          "calldata_hex": { "type": "string" }
+        }
+      }
+    },
+    "deploy_bodies": { "type": "array" }
+  }
+}

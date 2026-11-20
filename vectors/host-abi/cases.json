@@ -1,0 +1,42 @@
+{
+  "protocol": "dalkanes",
+  "spec_version": "0.1",
+  "cases": [
+    {
+      "name": "execute_tiny",
+      "source": "dogex src/alkanes/runtime.rs test execute_tiny",
+      "module": "execute_tiny.wat",
+      "params": { "fuel": 100000, "height": 1, "tx_index": 0, "block_time": 1700000000, "calldata_hex": "", "storage": {} },
+      "expect": { "ok": true, "return_hex": "6f6b" }
+    },
+    {
+      "name": "storage_cap_exceeded",
+      "source": "dogex src/alkanes/runtime.rs test rejects_oversized_storage_map",
+      "module": "execute_tiny.wat",
+      "params": { "fuel": 100000, "height": 1, "tx_index": 0, "block_time": 0, "calldata_hex": "", "storage_key_count": 8193 },
+      "expect": { "ok": false, "error_contains": "storage too large" }
+    },
+    {
+      "name": "staticcall_reads_child_height",
+      "source": "dogex src/alkanes/runtime.rs test staticcall_height_from_oracle_like",
+      "module": "staticcall_parent.wat",
+      "contracts": { "9:1": "staticcall_child.wat" },
+      "params": { "fuel": 500000, "height": 42, "tx_index": 0, "block_time": 0, "myself": "1:0", "caller": "0:0", "calldata_hex": "" },
+      "expect": { "ok": true, "return_hex": "2a00000000000000" }
+    },
+    {
+      "name": "attached_value_and_incoming_layout",
+      "source": "dogex src/alkanes/runtime.rs test alkane_value_and_incoming_host",
+      "module": "value_and_incoming.wat",
+      "params": {
+        "fuel": 100000, "height": 1, "tx_index": 0, "block_time": 0, "myself": "1:0", "caller": "0:0",
+        "calldata_hex": "", "attached_value": 42000,
+        "incoming": [ { "token_block": 9, "token_tx": 1, "amount": "777" } ]
+      },
+      "expect": {
+        "ok": true,
+        "decoded": { "value_i64_le_at_0": 42000, "incoming_count_i32_le_at_8": 1, "token_block_u64_le_at_16": 9, "amount_u128_le_at_32": "777" }
+      }
+    }
+  ]
+}

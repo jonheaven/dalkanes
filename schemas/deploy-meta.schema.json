@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jonheaven/dalkanes/schemas/deploy-meta.schema.json",
+  "title": "Dalkanes deploy metadata",
+  "description": "Recorded for each valid deploy (spec section 4.3).",
+  "type": "object",
+  "required": ["id", "txid", "height", "tx_index", "code_hash", "code_len"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[0-9]+:[0-9]+$", "description": "AlkaneId display form block:tx" },
+    "txid": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "height": { "type": "integer", "minimum": 0 },
+    "tx_index": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "code_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of the inflated WASM, lowercase hex" },
+    "code_len": { "type": "integer", "minimum": 4, "maximum": 524288 },
+    "content_type": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}

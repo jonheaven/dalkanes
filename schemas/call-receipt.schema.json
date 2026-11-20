@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jonheaven/dalkanes/schemas/call-receipt.schema.json",
+  "title": "Dalkanes call receipt",
+  "description": "Recorded for every call whose target exists (spec section 9). ok, fuel_used and return_hex are consensus-relevant; error and logs are diagnostic.",
+  "type": "object",
+  "required": ["txid", "height", "target", "ok", "fuel_used", "return_hex"],
+  "properties": {
+    "txid": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "height": { "type": "integer", "minimum": 0 },
+    "target": { "type": "string", "pattern": "^[0-9]+:[0-9]+$" },
+    "ok": { "type": "boolean" },
+    "fuel_used": { "type": "integer", "minimum": 0, "maximum": 5000000 },
+    "return_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$", "maxLength": 32768 },
+    "error": { "type": ["string", "null"] },
+    "logs": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}
