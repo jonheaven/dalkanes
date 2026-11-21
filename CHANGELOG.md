@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — 2026-11-20
+
+Closes the open execution and reorg gaps from 0.2. Consensus-relevant: the block budget and `fuel_used` changes alter receipts, so every indexer must run a 0.3 build from mainnet activation (block 6,466,500).
+
+- Per-block fuel budget `BLOCK_FUEL_BUDGET` = 100,000,000, pinned (§6.2, §12), with vectors in `vectors/block-fuel.json`. Exhausted calls get `ok: false`, `fuel_used: 0`.
+- `fuel_used` is reported for every exit after fuel is granted, including start-function and instantiation failures (§6.3).
+- A nested `call` keeps a child's writes only after the return-data copy succeeds; a bad buffer returns −1 and discards them (§7, §7.6). Failed children roll back exactly, including grandchildren.
+- Reorgs restore a stored empty value as present and delete keys that were absent (§11).
+- New host-ABI cases for nested rollback and setup-failure fuel; `burner.wat` for the budget vectors.
+
 ## 0.2.1 — 2026-11-20
 
 - Mainnet activation height set to block 6,466,500 (§2), just above the 2026-11-20 tip of 6,466,091. Testnet remains unset; regtest unchanged.

@@ -6,7 +6,8 @@ Every vector here comes from the reference indexer's unit tests, or from the vec
 | --- | --- |
 | [wire.json](wire.json) | Magic bytes, cellpack encoding, `OP_RETURN` scripts, calldata layout |
 | [parser.json](parser.json) | Positive/negative strict script and cellpack cases, mirrored in Rust and both explorer test suites |
-| [host-abi/](host-abi/) | Small WAT contracts with the outputs the reference runtime is tested to produce |
+| [host-abi/](host-abi/) | Small WAT contracts with the outputs the reference runtime is tested to produce (including nested rollback and setup-failure fuel) |
+| [block-fuel.json](block-fuel.json) | Per-block fuel budget: grants, `fuel_used` and the exhausted receipt across a block |
 
 The schema is in [../schemas/vectors.schema.json](../schemas/vectors.schema.json).
 

@@ -1,6 +1,6 @@
 # Dalkanes specification
 
-**Version:** 0.2.1 (draft)
+**Version:** 0.3.0 (draft)
 **Status:** Experimental. The reference indexer implements this version and its unit tests pass; remaining gaps are listed in [IMPLEMENTATION.md](IMPLEMENTATION.md). Mainnet activation is pinned at block 6,466,500 (§2). No live-chain replay is claimed.
 **Carrier:** `OP_RETURN` payload beginning `0xD1 0x01`
 **License:** MIT
@@ -13,7 +13,7 @@ Sections marked *(informative)* are guidance. Everything else is normative.
 
 ## 1. Overview
 
-Dalkanes is an indexer-level metaprotocol. It adds deterministic WebAssembly contracts to Dogecoin without changing Dogecoin consensus. The design goal is state reproducible from the Dogecoin chain and a pinned execution profile. The activation height, fuel cap and interpreter version are spec constants (§2, §6.2), not operator settings. This draft is not a declaration of a production-ready consensus standard; open items are listed in IMPLEMENTATION.md.
+Dalkanes is an indexer-level metaprotocol. It adds deterministic WebAssembly contracts to Dogecoin without changing Dogecoin consensus. The design goal is state reproducible from the Dogecoin chain and a pinned execution profile. The activation height, fuel caps and interpreter version are spec constants (§2, §6.2), not operator settings. This draft is not a declaration of a production-ready consensus standard; open items are listed in IMPLEMENTATION.md.
 
 The protocol has three on-chain actions and one off-chain action:
 
@@ -159,7 +159,11 @@ Within a block, indexers MUST apply effects in this order:
 - Fuel granted = `max(1, min(fuel, MAX_FUEL))`.
 - Instruction fuel is the default fuel schedule of **`wasmi` 1.1.0** with `consume_fuel` enabled. The interpreter version is part of this spec: the reference pins the exact version (`wasmi = "=1.1.0"`), and changing it is a protocol change. Another implementation MUST reproduce wasmi 1.1.0's fuel accounting exactly.
 - Host functions charge the extra fuel listed in §7. If a host charge exceeds the remaining fuel, that is a fatal host error (§6.4).
-- There is no per-block fuel budget in this version.
+- **Block budget.** `BLOCK_FUEL_BUDGET` = **100,000,000** per block. It is a constant; there is no operator override. Let `R` be the budget left before a call (100,000,000 at the first call in the block). For each call whose target exists (§5.4), in transaction-index order:
+  - If `R` = 0, the call is not executed. Its receipt is `ok: false`, `fuel_used: 0`, with no state change (error `block fuel budget exhausted`).
+  - Otherwise fuel granted = `min(max(1, min(fuel, MAX_FUEL)), R)`, and after the call `R` ← `R − fuel_used`.
+  - Deploys, and messages that produce no receipt (§10), do not touch `R`. Nested calls draw from their top-level call's grant, not separately from `R`.
+- Budget is first come, first served in transaction order; there is no per-message minimum and no split by transaction size. Vectors: [vectors/block-fuel.json](vectors/block-fuel.json).
 
 ### 6.3 Steps
 
@@ -173,7 +177,7 @@ For each call, an indexer MUST:
 6. Otherwise, including a non-zero return, a trap or running out of fuel, discard every staged write.
 7. Record a receipt (§9) on both success and failure.
 
-After guest return or a guest trap, `fuel_used` = granted fuel minus remaining fuel. Early exits during loading/instantiation/export/memory setup currently report the default zero; this can under-report start-function consumption.
+`fuel_used` = granted fuel minus remaining fuel, at every exit once fuel has been granted: guest return, trap, and also instantiation or start-function failure, a missing `memory` or `__dalk_execute` export, and a failed calldata write. A start function's consumption is therefore always reported. Only a module that fails to decode (before instantiation) reports `fuel_used: 0`. A nested child's `fuel_used` is computed the same way and is deducted from its caller (§7.6).
 
 ### 6.4 Fatal host errors
 
@@ -212,7 +216,7 @@ These make the call fail even if `__dalk_execute` later returns `0`:
 
 ## 7. Host ABI (`env` module)
 
-Pointers and lengths are `i32`. A negative length is treated as 0. Out-of-bounds guest memory access returns the function error value (or silently returns for void imports); a preceding fuel charge can still take effect. For a successful `call`, the child's staged writes are adopted before its return data is copied out; if that copy is out of bounds, `call` returns −1 but the writes stay staged. Ids passed as `i64` MUST satisfy `block ≥ 0` and `0 ≤ tx ≤ 2^32 − 1`; otherwise the import returns its error value (−1 for `ledger_get`, `staticcall` and `call`; 0 for `ledger_mint` and `ledger_transfer`). Ids are never clamped or truncated.
+Pointers and lengths are `i32`. A negative length is treated as 0. Out-of-bounds guest memory access returns the function error value (or silently returns for void imports); a preceding fuel charge can still take effect. For a successful `call`, the child's return data is copied out first; if that copy is out of bounds, `call` returns −1 and the child's writes are discarded as if it had failed (§7.6). Ids passed as `i64` MUST satisfy `block ≥ 0` and `0 ≤ tx ≤ 2^32 − 1`; otherwise the import returns its error value (−1 for `ledger_get`, `staticcall` and `call`; 0 for `ledger_mint` and `ledger_transfer`). Ids are never clamped or truncated.
 
 ### 7.1 Storage
 
@@ -281,9 +285,9 @@ Rules for both:
 - Calldata is the `min(cd_len, 16384)` bytes at `cd_ptr`. They are passed raw, not re-encoded.
 - Child context: `myself` = target, `caller` = the calling contract, `alkane_block` and `alkane_time` inherited, `alkane_tx` = 0, `alkane_value` = 0, `incoming` empty.
 - The child sees everything staged so far in the top-level call: ledger writes, and storage writes for every contract (including its own, from earlier nested calls). Below that it reads state as of the start of the call (§6.1). The target must be visible under §5.4.
-- If the target does not exist, or the child fails, the nested call returns −1 and the child has no effect.
-- On success it writes `min(len, out_max)` bytes of the child's return data to `out_ptr` and returns that count. The caller frame's pending return data is replaced by the child's, until the caller sets its own.
-- Storage writes are staged per contract: a child's writes always belong to the child's own id, and the caller's to the caller's. On a successful `call` the caller adopts the child's staged state; after a `staticcall`, or a failed child, the child's writes are discarded. Each frame has its own 512-distinct-key write cap (§6.4). Everything staged commits only if the top-level call succeeds (§6.3).
+- If the target does not exist, or the child fails, the nested call returns −1 and the child has no effect: every storage and ledger write it (and anything it called) staged is undone, restoring the exact staged state from before the call, and its logs are dropped. The fuel it used is still charged.
+- On success it writes `min(len, out_max)` bytes of the child's return data to `out_ptr` and returns that count. If that write is out of bounds, the nested call returns −1 and the child has no effect, exactly as if it had failed. Only after a successful copy does a `call` keep the child's writes and logs. The caller frame's pending return data is replaced by the child's, until the caller sets its own.
+- Storage writes are staged per contract: a child's writes always belong to the child's own id, and the caller's to the caller's. On a successful `call` the caller adopts the child's staged state; after a `staticcall`, a failed child, or a failed return-data copy, the child's writes are discarded. *(Informative: the reference shares one staged state across the call tree and keeps an undo journal per nested frame, so a nested call costs no copy of the parent's writes.)* Each frame has its own 512-distinct-key write cap (§6.4). Everything staged commits only if the top-level call succeeds (§6.3).
 
 ## 8. Host ledger
 
@@ -316,6 +320,7 @@ Dalkanes has no cenotaphs. Because it carries no UTXO-bound assets, a malformed 
 | Target has no code | No effect, no receipt |
 | Below activation height | No effect, no receipt |
 | Instantiation error, trap, out of fuel, non-zero status, fatal host error | Receipt with `ok: false`, no state change |
+| Block fuel budget exhausted (§6.2) | Receipt with `ok: false`, `fuel_used: 0`, not executed, no state change |
 | Deploy that fails §4.2 | Ordinary inscription, no contract |
 
 The Dogecoin transaction itself is always valid or invalid by Dogecoin's own rules. DOGE moves as the transaction says, whatever happens to the Dalkanes message.
@@ -323,7 +328,7 @@ The Dogecoin transaction itself is always valid or invalid by Dogecoin's own rul
 ## 11. Reorgs
 
 - Dalkanes state SHOULD be fully determined by the active chain plus the pinned replay profile.
-- When a block is disconnected, an indexer MUST restore the state to exactly what it was before that block was applied. That means removing code and metadata deployed in the block, removing its receipts, and restoring every storage and ledger entry it changed, including deleting entries it created. The current undo encoding conflates absent values with stored empty storage values; exact restoration is a known gap, not a passing conformance claim.
+- When a block is disconnected, an indexer MUST restore the state to exactly what it was before that block was applied. That means removing code and metadata deployed in the block, removing its receipts, and restoring every storage and ledger entry it changed, including deleting entries it created. A storage key holding an empty value is present, not absent: it MUST be restored as present and empty, and a key that was absent MUST be deleted. *(Informative: the reference records the keys that were absent before the block separately from their prior values. Undo records written by reference builds before v0.3 lack that list and fall back to treating an empty prior value as absent.)* Ledger entries are never stored as zero (§8), so for them an empty prior value means absent.
 - A block's Dalkanes effects MUST be committed atomically with the indexer's record of having processed that block.
 
 *(Informative)* Dogecoin targets a block about every 60 seconds under merged-mined AuxPoW. Applications SHOULD choose confirmation policies appropriate to reorg risk; this spec does not establish a settlement guarantee.
@@ -335,6 +340,7 @@ The Dogecoin transaction itself is always valid or invalid by Dogecoin's own rul
 | Code size after inflation | 4 B – 512 KiB |
 | Cellpack inputs | ≤ 256 (≤ 78 bytes total for default relay) |
 | `MAX_FUEL` per top-level call | 5,000,000 |
+| `BLOCK_FUEL_BUDGET` per block | 100,000,000 |
 | Distinct storage writes per frame | ≤ 512 |
 | Storage key / value | 256 B / 4,096 B |
 | Return data | 16,384 B |
@@ -371,20 +377,19 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 | Assets | Protorune balances bound to UTXOs, with edicts, pointer and refund pointer | Host ledger keyed by contract-defined accounts | No protorune host. A simpler model at the cost of UTXO-native transfers. |
 | Caller identity | Context with incoming parcels, plus the full transaction and block (`__load_transaction`, `__load_block`) | `alkane_sender`: the P2PKH key that signed input 0 with `SIGHASH_ALL`; contracts can also verify Schnorr signatures | A signature and key do not fit in a 78-byte cellpack, so the transaction's own signature is the authorisation |
 | Runtime | `wasmi` fuel inside the METASHREW WASM indexer | `wasmi` 1.1.0 (pinned) fuel inside a native indexer | Same metering idea, no separate METASHREW process |
-| Fuel budget | 100M per block, split by vsize, 90k minimum per message | 5M per call, no block budget | Simpler. A block budget is on the roadmap (§15). |
+| Fuel budget | 100M per block, split by vsize, 90k minimum per message | 5M per call; 100M per block, first come first served in tx order, no per-message minimum (§6.2) | Same block ceiling, simpler allocation |
 | Contract ABI | `__execute`, `__request_context` / `__load_context`, `__request_storage` / `__load_storage`, `__call` / `__staticcall` / `__delegatecall`, `__returndatacopy`, … | `__dalk_execute(ptr, len)`, plus the `env` imports in §7 | Smaller ABI. ALKANES contracts must be ported. |
 | Genesis contracts | DIESEL at `[2,0]` | No hard-coded genesis installation found. Templates are ordinary deploys. | No equivalent bootstrap implementation |
 | Activation | Block 880,000 | Mainnet block 6,466,500 (spec constant, §2); testnet not set | |
 
 ## 15. Reserved and future work *(informative)*
 
-- A block-level fuel budget and minimum fuel per message.
+- A minimum fuel per message, or a size-weighted split of the block budget (§6.2).
 - A per-transaction caller context (inputs and outputs) for contracts.
 - Asset transfer into calls, for example through Dunes or a native parcel format. This would fill the `incoming_*` imports on chain.
 - Factory and clone deploys, and deterministic reserved ids.
 - Module validation at deploy, and a float-free instruction subset.
 - Publishing the testnet activation height (§2).
-- Restoring a stored empty value exactly on reorg (§11).
 
 ---
 

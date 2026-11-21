@@ -6,7 +6,7 @@ Dalkanes (written Ðalkanes in some UIs) is a Dogecoin metaprotocol. Contracts a
 
 | | |
 | --- | --- |
-| Status | **Experimental draft v0.2.1.** Reference unit tests; not production-ready. Mainnet activation: block 6,466,500. |
+| Status | **Experimental draft v0.3.0.** Reference unit tests; not production-ready. Mainnet activation: block 6,466,500. |
 | Normative spec | [spec.md](spec.md) |
 | Carrier byte | `OP_RETURN` push `0xD1`, version `0x01` |
 | Deploy | Doginals inscription carrying WASM (raw, gzip, or `\0ALK\x01` framed) |
