@@ -370,11 +370,11 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 
 | Topic | ALKANES (Bitcoin) | Dalkanes (Dogecoin) | Why |
 | --- | --- | --- | --- |
-| Host for messages | Protostones inside a Runestone (protorunes, protocol tag `1`) | Standalone `OP_RETURN` with `0xD1` | Dogecoin has no Runes, so there is no Runestone to embed in |
+| Host for messages | Protostones inside a Runestone (protorunes, protocol tag `1`) | Standalone `OP_RETURN` with `0xD1` | Ðunes (`0xD0`) has no protostone slot. An unknown even tag burns the token inputs. A call on its own byte cannot be parsed as a dunestone. |
 | Deploy carrier | Gzipped WASM in a Taproot witness envelope, plus a `[1,0]` / `[3,n]` cellpack | Doginals inscription (P2SH `scriptSig`) | No Taproot or witness on Dogecoin. Doginals is the established data carrier. |
 | Contract ids | `[2, n]` by sequence, `[4, n]` reserved, `[5,n]` / `[6,n]` clone | `block:tx` of the deploy | Simple and Runes-style. Factory and clone ids are not supported. |
 | Message size | Bitcoin `OP_RETURN`, much larger since Core 30 | ≤ 80-byte payload (78-byte cellpack) by default relay | Dogecoin Core policy |
-| Assets | Protorune balances bound to UTXOs, with edicts, pointer and refund pointer | Host ledger keyed by contract-defined accounts | No protorune host. A simpler model at the cost of UTXO-native transfers. |
+| Assets | Protorune balances bound to UTXOs, with edicts, pointer and refund pointer | Host ledger keyed by contract-defined accounts | Contract balances are not Ðunes. Moving real `0xD0` coins into a call is future work (§15). |
 | Caller identity | Context with incoming parcels, plus the full transaction and block (`__load_transaction`, `__load_block`) | `alkane_sender`: the P2PKH key that signed input 0 with `SIGHASH_ALL`; contracts can also verify Schnorr signatures | A signature and key do not fit in a 78-byte cellpack, so the transaction's own signature is the authorisation |
 | Runtime | `wasmi` fuel inside the METASHREW WASM indexer | `wasmi` 1.1.0 (pinned) fuel inside a native indexer | Same metering idea, no separate METASHREW process |
 | Fuel budget | 100M per block, split by vsize, 90k minimum per message | 5M per call; 100M per block, first come first served in tx order, no per-message minimum (§6.2) | Same block ceiling, simpler allocation |

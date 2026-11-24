@@ -18,7 +18,7 @@ Dalkanes (written Ðalkanes in some UIs) is a Dogecoin metaprotocol. Contracts a
 
 Dalkanes is a Dogecoin port of the ideas behind **[ALKANES](https://github.com/kungfuflex/alkanes-rs)** by kungfuflex and the SUBFROST contributors, together with **[protorunes](https://github.com/kungfuflex/protorune/wiki)** and the **[METASHREW](https://github.com/kungfuflex/metashrew)** indexer. Those projects showed that WASM contracts metered with `wasmi` fuel and replayed by indexers are a workable smart-contract layer for a UTXO chain. Opcode conventions such as `0` initialize, `77` mint, `99`/`100`/`101` name, symbol and supply, and `1000` data come from the ALKANES standard contracts.
 
-Dalkanes is **inspired by** ALKANES. It is **not wire- or ABI-compatible**, and ALKANES contracts do not run on Dalkanes unmodified. [spec.md §14](spec.md#14-relationship-to-bitcoin-alkanes-informative) explains what changed and why. In short, Dogecoin has no Runes for protostones to ride on, no Taproot witness envelope, and an 80-byte `OP_RETURN` relay limit.
+Dalkanes is **inspired by** ALKANES. It is **not wire- or ABI-compatible**, and ALKANES contracts do not run on Dalkanes unmodified. [spec.md §14](spec.md#14-relationship-to-bitcoin-alkanes-informative) explains what changed and why. Bitcoin ALKANES rides inside a Runestone. Ðunes (`0xD0`) has no slot for that: an unknown even tag burns the token inputs. Calls use their own byte, `0xD1`, so a contract message is not a dunestone. There is no Taproot witness on Dogecoin, and `OP_RETURN` relay is about 80 bytes. Contract balances live on a host ledger. They are not Ðunes. Moving `0xD0` coins into a call is future work.
 
 ## How it works
 
