@@ -1,6 +1,8 @@
 # Implementation status
 
-Updated 2026-11-20 for v0.3. The reference is dogex; its implementation source is not yet public. This is still experimental, **not a production-readiness or live-chain-replay claim**.
+Updated 2026-11-25 for v0.4. The reference is dogex; its implementation source is not yet public. This is still experimental, **not a production-readiness or live-chain-replay claim**.
+
+Version `0x02` output parcels, `parcel_mint`, and the `dalkanes-utxo-token-v1` template are in the reference. Version `0x01` calls are unchanged. Opening the indexer creates the `alkane_outpoint` column; existing `0x01` receipts do not need a replay.
 
 ## Corrected and covered by reference tests
 

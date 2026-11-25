@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — 2026-11-25
+
+Output parcels. A wallet balance sits on a Dogecoin output. The host ledger is the sheet a contract holds after a deposit. This does not change version `0x01` calls. No parcel exists on chain until something mints one, so indexers pick this up by opening the new `alkane_outpoint` column — they do not replay `0x01` history.
+
+- Version `0x02` parcel: pointer, edicts, optional cellpack call (§16).
+- Spending an output that holds a parcel without that message burns the parcel.
+- `env.parcel_mint` creates units of the called alkane on an output. Template `dalkanes-utxo-token-v1`, opcode `77`.
+- Deposit output `u32::MAX - 1` fills `incoming_*` and, on a successful call, the contract's ledger sheet.
+
 ## 0.3.0 — 2026-11-20
 
 Closes the open execution and reorg gaps from 0.2. Consensus-relevant: the block budget and `fuel_used` changes alter receipts, so every indexer must run a 0.3 build from mainnet activation (block 6,466,500).

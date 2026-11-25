@@ -24,7 +24,7 @@ The protocol has three on-chain actions and one off-chain action:
 | (none) | Plain Dogecoin transactions | No Dalkanes effect |
 | Simulate | Indexer API (Appendix A) | Dry-run with no state change |
 
-Dalkanes does not attach assets to UTXOs. Contract balances live in a host ledger (§8), keyed by account bytes that each contract defines. Spending, splitting or burning a Dogecoin output never moves a Dalkanes balance.
+A Dalkane token a wallet holds sits on a Dogecoin output (§16). Spending that output without a version `0x02` parcel burns the balance. The host ledger (§8) is the contract's own sheet: coins move there when a parcel deposits them into a call, and a call can mint or withdraw them back onto an output. An older template may still keep an account balance in that ledger; spending a Dogecoin output does not move those account balances.
 
 ## 2. Activation
 
@@ -311,7 +311,7 @@ A receipt is recorded for every call whose target exists (§5.4), keyed by txid.
 
 ## 10. Invalid and no-op messages
 
-Dalkanes has no cenotaphs. Because it carries no UTXO-bound assets, a malformed message cannot burn anything.
+Dalkanes has no cenotaphs for DOGE. A malformed `0xD1` message does not move DOGE. An output parcel is different: spending an output that holds one, without a valid version `0x02` message, burns that parcel (§16).
 
 | Situation | Result |
 | --- | --- |
@@ -374,7 +374,7 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 | Deploy carrier | Gzipped WASM in a Taproot witness envelope, plus a `[1,0]` / `[3,n]` cellpack | Doginals inscription (P2SH `scriptSig`) | No Taproot or witness on Dogecoin. Doginals is the established data carrier. |
 | Contract ids | `[2, n]` by sequence, `[4, n]` reserved, `[5,n]` / `[6,n]` clone | `block:tx` of the deploy | Simple and Runes-style. Factory and clone ids are not supported. |
 | Message size | Bitcoin `OP_RETURN`, much larger since Core 30 | ≤ 80-byte payload (78-byte cellpack) by default relay | Dogecoin Core policy |
-| Assets | Protorune balances bound to UTXOs, with edicts, pointer and refund pointer | Host ledger keyed by contract-defined accounts | Contract balances are not Ðunes. Moving real `0xD0` coins into a call is future work (§15). |
+| Assets | Protorune balances bound to UTXOs, with edicts, pointer and refund pointer | Version `0x02` parcels bound to outputs, plus the host ledger while a contract holds coins (§16). Not Ðunes. | Own marker and own rules, same UTXO idea. A dunestone has no protostone tag, so the parcel is a `0xD1` message. |
 | Caller identity | Context with incoming parcels, plus the full transaction and block (`__load_transaction`, `__load_block`) | `alkane_sender`: the P2PKH key that signed input 0 with `SIGHASH_ALL`; contracts can also verify Schnorr signatures | A signature and key do not fit in a 78-byte cellpack, so the transaction's own signature is the authorisation |
 | Runtime | `wasmi` fuel inside the METASHREW WASM indexer | `wasmi` 1.1.0 (pinned) fuel inside a native indexer | Same metering idea, no separate METASHREW process |
 | Fuel budget | 100M per block, split by vsize, 90k minimum per message | 5M per call; 100M per block, first come first served in tx order, no per-message minimum (§6.2) | Same block ceiling, simpler allocation |
@@ -386,10 +386,29 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 
 - A minimum fuel per message, or a size-weighted split of the block budget (§6.2).
 - A per-transaction caller context (inputs and outputs) for contracts.
-- Asset transfer into calls, for example through Dunes or a native parcel format. This would fill the `incoming_*` imports on chain.
 - Factory and clone deploys, and deterministic reserved ids.
 - Module validation at deploy, and a float-free instruction subset.
 - Publishing the testnet activation height (§2).
+
+## 16. Output parcels (version `0x02`)
+
+Version `0x01` remains a contract call and does not move output balances. Version `0x02` is a parcel message. It is its own `OP_RETURN` payload, not a tag inside a dunestone. Ðunes keep their own rules. An unknown even tag in a dunestone still burns that dune's inputs.
+
+The payload after `0xD1` is:
+
+1. Version byte `0x02`.
+2. Pointer, LEB128. `u32::MAX` means there is no pointer.
+3. Edict count, LEB128, at most 16.
+4. Each edict: token block (u64), token tx (u32), amount (u128), output (u32), each LEB128. Amount `0` means the rest of that token.
+5. `1` if a cellpack call follows, otherwise `0`. The cellpack is §5.2.
+
+An indexer gathers every parcel on the inputs. With no `0x02` message, those amounts are burned and the outputs receive none. Edicts run in order. Output `u32::MAX - 1` deposits that amount into the call in this message instead of a vout. Any other output that is missing or is an `OP_RETURN` burns that edict. The pointer receives whatever edicts did not take. A missing or unusable pointer burns the remainder.
+
+A deposit is credited to the contract's host-ledger sheet only when the call succeeds. The account bytes are the 12-byte id of the called contract. The call sees those amounts through `incoming_count` / `incoming_get`. If the call fails, or there is no call, the deposit goes to the pointer when that output can hold it, and otherwise burns.
+
+`env.parcel_mint(vout, amount_lo, amount_hi)` on a successful top-level call creates `amount` units of the called alkane on that output. The indexer ignores a vout that does not exist or is an `OP_RETURN`. The reference template `dalkanes-utxo-token-v1` exposes this as opcode `77` with cells `(77, vout, amount)`.
+
+Spending an output that holds a parcel without a valid `0x02` message burns it, including when the transaction carries only a version `0x01` call.
 
 ---
 
@@ -404,7 +423,8 @@ The reference indexer serves these routes. They are not part of consensus:
 | `GET /api/alkanes/{block}/{tx}/storage` | Storage peek |
 | `GET /api/alkanes/{block}/{tx}/inspect` | ABI-aware read methods, for known templates |
 | `GET /api/alkanes/calls`, `GET /api/alkanes/calls/{txid}` | Receipts |
-| `GET /api/alkanes/ledger/{block}/{tx}/{account}` | Host-ledger balance |
+| `GET /api/alkanes/ledger/{block}/{tx}/{account}` | Host-ledger balance (contract sheet, or an account template) |
+| `GET /api/alkanes/output/{txid}/{vout}` | Parcel balances on one output |
 | `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides, and returns per-contract `contract_writes`. |
 | `POST /api/alkanes/build-call` | Builds a form-A `OP_RETURN` script |
 | `GET /api/alkanes/templates[/{name}]` | Reference contract templates |
