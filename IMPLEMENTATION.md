@@ -4,6 +4,8 @@ Updated 2026-11-25 for v0.4. The reference is dogex; its implementation source i
 
 Version `0x02` output parcels, `parcel_mint`, and the `dalkanes-utxo-token-v1` template are in the reference. Version `0x01` calls are unchanged. Opening the indexer creates the `alkane_outpoint` column; existing `0x01` receipts do not need a replay.
 
+Fair-launch tokens are built by `POST /api/alkanes/launch/build` from name, symbol, cap, and mint size. The indexer stores `launch` on the deploy metadata only when the bytecode hashes to that build. doginals.lol inscribes the returned deploy body; it does not accept an uploaded WASM file.
+
 ## Corrected and covered by reference tests
 
 - Same-block deploy visibility and sequential storage/ledger writes through a block overlay. Later deploys are invisible to earlier calls; a transaction can deploy and call its own contract. First valid deploy per transaction wins.

@@ -7,6 +7,7 @@ Output parcels. A wallet balance sits on a Dogecoin output. The host ledger is t
 - Version `0x02` parcel: pointer, edicts, optional cellpack call (§16).
 - Spending an output that holds a parcel without that message burns the parcel.
 - `env.parcel_mint` creates units of the called alkane on an output. Template `dalkanes-utxo-token-v1`, opcode `77`.
+- Fair-launch bytecode is built from name, symbol, cap, and mint size. The indexer labels a contract only when that rebuild matches the code hash (§17).
 - Deposit output `u32::MAX - 1` fills `incoming_*` and, on a successful call, the contract's ledger sheet.
 
 ## 0.3.0 — 2026-11-20

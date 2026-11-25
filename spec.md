@@ -410,6 +410,14 @@ A deposit is credited to the contract's host-ledger sheet only when the call suc
 
 Spending an output that holds a parcel without a valid `0x02` message burns it, including when the transaction carries only a version `0x01` call.
 
+## 17. Fair-launch tokens *(informative)*
+
+A fair-launch token is a contract whose bytecode is the canonical build of a name, a symbol, a cap, and a mint size. The indexer labels it only when rebuilding those parameters produces the same code hash. A file that copies the header and changes the rules does not match.
+
+The rules baked into that build: no premine, one mint per verified sender, mint size fixed, cap a multiple of that size. Opcode `77` takes the output index only. Views `99`–`103` return name, symbol, minted, cap, and mint size. Units are created with `parcel_mint` on that output.
+
+`POST /api/alkanes/launch/build` accepts those four parameters and returns the deploy body. It does not accept bytecode.
+
 ---
 
 ## Appendix A. Indexer HTTP API *(informative)*
@@ -428,6 +436,7 @@ The reference indexer serves these routes. They are not part of consensus:
 | `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides, and returns per-contract `contract_writes`. |
 | `POST /api/alkanes/build-call` | Builds a form-A `OP_RETURN` script |
 | `GET /api/alkanes/templates[/{name}]` | Reference contract templates |
+| `POST /api/alkanes/launch/build` | Canonical fair-launch deploy body from name, symbol, cap, and mint size |
 
 ## Appendix B. Worked example
 
