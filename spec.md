@@ -476,21 +476,20 @@ A Proof is one deploy of one canonical bytecode, and then one pull. The indexer 
 
 The pull is opcode `77` with the output index. It runs once. It requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of this alkane onto that output. A second pull fails. The unit is a parcel of this deploy's own id, so it does not add to a parcel of any other Proof.
 
-Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a hatch or a study, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many have been pulled, and the cap, which is 1.
+Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many have been pulled, and the cap, which is 1.
 
-The picture is a print. It uses integer arithmetic. The program does not roll a die. It hashes the stored block height, transaction index, time, and sender, and reads that digest:
+The picture is a sacred-geometry print. It uses integer arithmetic. The program does not roll a die. It hashes the stored block height, transaction index, time, and sender, and reads that digest. The circles sit on a six-fold lattice: the distance between two centers is the radius, so each circle passes through its neighbors.
 
 | Byte | Below | Result |
 | --- | --- | --- |
-| 0 | 110, 160, 196, 224, 244 | Palette: Paper, Graphite, Blueprint, Bone, Night, then Gilt |
-| 1 | 64, 112, 160, 200, 232 | Form: Hatch, Rings, Rules, Blocks, Fan, then Study |
-| 2 | remainder 3 | Density of the marks |
-| 3 | — | Where a ring sits, and which cell of a block field is the accent |
-| 4 | — | Which corner a fan starts from, and whether rules run vertical |
+| 0 | 110, 160, 196, 224, 244 | Palette: Vellum, Lapis, Temple, Moon, Night, then Gilt |
+| 1 | 64, 112, 160, 200, 232 | Form: Flower, Merkaba, Cube, Vesica, Seal, then Lattice |
+| 2 | — | How many rings, and which vesica |
+| 3 | — | Which circle, triangle, or star is drawn in the second ink |
 | 5 | 190, 220, 244 | Plate: Plain, Crops, Frame, then Flood |
-| 6 | 10 | A printer's mark is drawn. Otherwise the sheet has none |
-| 7 | low two bits | Caption text: `A.P.`, `E.A.`, `H.C.`, `P.P.` |
-| 8 | low three bits | Cut of a hatch or study: Full, Disc, Half, Band, Ring, Sides, Base, then Corner |
+| 6 | 24 | A line is set under the plate. Otherwise the sheet has none |
+| 7 | low three bits | Caption: `much wow`, `such sacred`, `very hash`, `so rare`, `wow`, `to the moon`, `much proof`, `such coin` |
+| 8 | low two bits | Cut of a flower or lattice: Full, Seed, Ring, then Petal |
 
 A later view reads the stored record. It does not read the clock again.
 

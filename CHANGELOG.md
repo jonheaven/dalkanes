@@ -4,7 +4,7 @@
 
 No wire change. A new canonical build, [spec.md §20](spec.md#20-proof-informative). One deploy, one pull, one parcel. The SVG and the traits are the SHA-256 of the pull's block, transaction index, time, and sender. `GET /api/alkanes/proof/build` returns that bytecode and does not accept a replacement.
 
-The picture was revised the same day, before anything was inscribed. Proof is a print: hatch, rings, rules, blocks, a fan, or a study, on six grounds. The dog drawing from the first pass is a separate canonical build, [spec.md §21](spec.md#21-shibkanes-informative). `GET /api/alkanes/shibkane/build` returns that bytecode. The cap of each Proof and each Shibkane is still 1.
+The picture was revised the same day, before anything was inscribed. Proof is a sacred-geometry print: a flower of life, a merkaba, Metatron’s cube, a vesica, a seal, or a lattice. The line under the plate, when there is one, is a Doge phrase rather than a printer’s abbreviation. The dog drawing from the first pass is a separate canonical build, [spec.md §21](spec.md#21-shibkanes-informative). `GET /api/alkanes/shibkane/build` returns that bytecode. The cap of each Proof and each Shibkane is still 1.
 
 ## 0.4.0 — 2026-11-25
 
