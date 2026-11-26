@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-No wire change.
+- A pull of an inscribed Proof or Shibkane births a print. The new id is that transaction's `block:tx`, the inscribed program is what runs, and the parcel is of the new id. The program is not inscribed again. A create that carries new WASM still does not fit Dogecoin (§14, §20).
 
 - `vectors/host-abi/rollback_parent_bad_buffer.wat`, `rollback_parent_failed_child.wat` and `rollback_parent_grandchild.wat` did not parse: part of each header comment had wrapped onto lines that were not comments. Those lines are comments again; the modules are unchanged.
 - §7.5 lists `parcel_mint` and `parcel_withdraw`. Each costs 3,000 fuel, returns 1 or 0, and returns 0 from a nested call, the same as `parcel_send`.

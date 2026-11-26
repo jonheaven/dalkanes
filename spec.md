@@ -51,7 +51,7 @@ An **AlkaneId** is the pair `(block, tx)`:
 
 - **Display form:** `"{block}:{tx}"` in decimal, for example `5123456:7`.
 - **Key form (12 bytes):** `block` as 8-byte big-endian, then `tx` as 4-byte big-endian. Storage and ledger keys use this form.
-- Top-level calls use `0:0` as the caller sentinel. The implementation defines no additional special deployment/clone/genesis ids.
+- Top-level calls use `0:0` as the caller sentinel. No reserved genesis id is installed. A print pull assigns a new id (§20).
 
 ## 4. Deploy
 
@@ -382,7 +382,7 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 | --- | --- | --- | --- |
 | Host for messages | Protostones inside a Runestone (protorunes, protocol tag `1`) | Standalone `OP_RETURN` with `0xD1` | Ðunes (`0xD0`) has no protostone slot. An unknown even tag burns the token inputs. A call on its own byte cannot be parsed as a dunestone. |
 | Deploy carrier | Gzipped WASM in a Taproot witness envelope, plus a `[1,0]` / `[3,n]` cellpack | Doginals inscription (P2SH `scriptSig`) | No Taproot or witness on Dogecoin. Doginals is the established data carrier. |
-| Contract ids | `[2, n]` by sequence, `[4, n]` reserved, `[5,n]` / `[6,n]` clone | `block:tx` of the deploy | Simple and Runes-style. Factory and clone ids are not supported. |
+| Contract ids | `[2, n]` by sequence, `[4, n]` reserved, `[5,n]` / `[6,n]` clone | `block:tx` of a deploy. A print pull also uses `block:tx`, of the pull, and runs the inscribed program (§20). | A create transaction cannot carry WASM: Segwit is disabled, and the relayed data carrier is 83 bytes. The clone that fits is a new id whose code is an inscription already on chain. |
 | Message size | Bitcoin `OP_RETURN`, much larger since Core 30 | ≤ 80-byte payload (78-byte cellpack) by default relay | Dogecoin Core policy |
 | Assets | Protorune balances bound to UTXOs, with edicts, pointer and refund pointer | Version `0x02` parcels bound to outputs, plus the host ledger while a contract holds coins (§16). Not Ðunes. | Own marker and own rules, same UTXO idea. A dunestone has no protostone tag, so the parcel is a `0xD1` message. |
 | Caller identity | Context with incoming parcels, plus the full transaction and block (`__load_transaction`, `__load_block`) | `alkane_sender`: the P2PKH key that signed input 0 with `SIGHASH_ALL`; contracts can also verify Schnorr signatures | A signature and key do not fit in a 78-byte cellpack, so the transaction's own signature is the authorisation |
@@ -396,7 +396,7 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 
 - A minimum fuel per message, or a size-weighted split of the block budget (§6.2).
 - A per-transaction caller context (inputs and outputs) for contracts.
-- Factory and clone deploys, and deterministic reserved ids.
+- Sequence ids `[2, n]` and reserved ids `[4, n]`. A print clone is specified in §20. Bitcoin's factory path that carries new WASM in the create transaction does not fit this chain.
 - Module validation at deploy, and a float-free instruction subset.
 - Publishing the testnet activation height (§2).
 
@@ -478,9 +478,11 @@ The reserves are the contract's ledger. No key can spend them. The pointer on th
 
 ## 20. Proof *(informative)*
 
-A Proof is one deploy of one canonical bytecode, and then one pull. The indexer labels it `proof` only when the bytecode hash matches `GET /api/alkanes/proof/build`. A patched copy is a different contract. The route does not accept bytecode.
+One inscription of the canonical bytecode is the program. The indexer labels that deploy `proof` only when the bytecode hash matches `GET /api/alkanes/proof/build`. A patched copy is a different program. The route does not accept bytecode.
 
-The pull is opcode `77` with the output index. It runs once. It requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of this alkane onto that output. A second pull fails. The unit is a parcel of this deploy's own id, so it does not add to a parcel of any other Proof.
+Opcode `77` on that program, with an output index, births a print. The print's id is the pull transaction's own `block:tx`. The indexer runs the inscribed program as that id: the pull's storage and the one minted parcel belong to the print, and a second `77` on the same print fails. A later `77` on the program births another print. Two prints do not add. A transaction that deploys a contract cannot also be a print, because one transaction has one id.
+
+The pull requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of the print onto that output. The program is not inscribed again.
 
 Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many have been pulled, and the cap, which is 1.
 
@@ -499,9 +501,11 @@ The picture is a sacred-geometry print. It uses integer arithmetic. The program 
 
 A later view reads the stored record. It does not read the clock again.
 
+Opcode `77` on a print, rather than on the inscribed program, does not birth another id. Shibkane (§21) uses this same birth. A call receipt includes `born` set to the new id.
+
 ## 21. Shibkanes *(informative)*
 
-A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. The pull, the cap of 1, and opcodes `77`, `99`–`102`, `200`, and `201` are the same shape as a Proof. The SVG is a dog. Pose, face, mark, gear, and plate come from later bytes of the same pull hash. A Shibkane is not a Proof, and the two do not merge.
+A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. Opcode `77` births a Shibkane the same way it births a Proof. The cap of each print is 1, and opcodes `99`–`102`, `200`, and `201` are the same shape. The SVG is a dog. Pose, face, mark, gear, and plate come from later bytes of the same pull hash. A Shibkane is not a Proof, and the two do not merge.
 
 ---
 
