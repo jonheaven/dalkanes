@@ -1,5 +1,9 @@
 # Changelog
 
+## Proof — 2026-11-26
+
+No wire change. A new canonical build, [spec.md §20](spec.md#20-proof-informative). One deploy, one pull, one parcel. The SVG and the traits are the SHA-256 of the pull's block, transaction index, time, and sender. `GET /api/alkanes/proof/build` returns that bytecode and does not accept a replacement.
+
 ## 0.4.0 — 2026-11-25
 
 Output parcels. A wallet balance sits on a Dogecoin output. The host ledger is the sheet a contract holds after a deposit. This does not change version `0x01` calls. No parcel exists on chain until something mints one, so indexers pick this up by opening the new `alkane_outpoint` column — they do not replay `0x01` history.

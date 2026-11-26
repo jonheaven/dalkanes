@@ -470,6 +470,16 @@ The reserves are the contract's ledger. No key can spend them. The pointer on th
 
 `GET /api/alkanes/pool/build?leg0={block:tx}&leg1={block:tx}` returns that deploy body, with the legs put in canonical order. It does not accept bytecode. Selling a Ðalkane for DOGE is not this pool. That sale is a PSDT: the seller signs the parcel input and the DOGE output they want, and the buyer adds a `0x02` pointer so the parcel follows the output they receive.
 
+## 20. Proof *(informative)*
+
+A Proof is one deploy of one canonical bytecode, and then one pull. The indexer labels it `proof` only when the bytecode hash matches `GET /api/alkanes/proof/build`. A patched copy is a different contract. The route does not accept bytecode.
+
+The pull is opcode `77` with the output index. It runs once. It requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of this alkane onto that output. A second pull fails. The unit is a parcel of this deploy's own id, so it does not add to a parcel of any other Proof.
+
+Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many have been pulled, and the cap, which is 1.
+
+The picture uses integer arithmetic. The dog is a fixed mask. Fur is quarter-circle paths. The palette is chosen from the first hash byte: Mondrian below 128, Blueprint below 176, Newsprint below 208, Solar below 232, Void below 248, and Gold otherwise. A caption is drawn only when the second hash byte is below 8. The four captions are `wow`, `much proof`, `such coin`, and `very hash`, from the low two bits of the third hash byte.
+
 ---
 
 ## Appendix A. Indexer HTTP API *(informative)*
@@ -485,8 +495,12 @@ The reference indexer serves these routes. They are not part of consensus:
 | `GET /api/alkanes/calls`, `GET /api/alkanes/calls/{txid}` | Receipts |
 | `GET /api/alkanes/ledger/{block}/{tx}/{account}` | Host-ledger balance (contract sheet, or an account template) |
 | `GET /api/alkanes/output/{txid}/{vout}` | Parcel balances on one output |
+| `POST /api/alkanes/outputs` | Parcel balances on up to 500 outputs in one call (`{"outpoints": ["txid:vout", …]}`); returns only outputs that hold something. A wallet reads its holdings this way. |
+| `GET /api/alkanes/{block}/{tx}/holders` | Addresses holding the token on their outputs, largest first, with holder count, output count and circulating units. A holder is the address an output pays. |
+| `GET /api/alkanes/markets` | Recent deploys with kind, label, recent calls, holder count and circulating units, plus name, symbol, cap and minted for canonical builds (§17–§19) |
 | `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides. Credits `incoming` to the contract's sheet first, as a real deposit would. Rejects malformed cells rather than dropping them. Returns per-contract `contract_writes` and the `outgoing` parcels a real call would place. |
 | `GET /api/alkanes/pool/build?leg0=&leg1=` | Canonical pool deploy body for a pair (§19) |
+| `GET /api/alkanes/proof/build` | Canonical Proof deploy body (§20) |
 | `POST /api/alkanes/build-call` | Builds a form-A `OP_RETURN` script |
 | `GET /api/alkanes/templates[/{name}]` | Reference contract templates |
 | `POST /api/alkanes/launch/build` | Canonical fair-launch deploy body from name, symbol, cap, and mint size |

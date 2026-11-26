@@ -6,6 +6,8 @@ Version `0x02` output parcels, `parcel_mint`, and the `dalkanes-utxo-token-v1` t
 
 Fair-launch tokens are built by `POST /api/alkanes/launch/build` from name, symbol, cap, and mint size. The indexer stores `launch` on the deploy metadata only when the bytecode hashes to that build. doginals.lol inscribes the returned deploy body; it does not accept an uploaded WASM file.
 
+Proof is a canonical build beside Howl, Ash, Vigil, and the pool. `GET /api/alkanes/proof/build` returns it. The indexer sets `canon` to `proof` only when the hash matches. Opcode `77` mints one parcel and freezes the picture. Opcodes `200` and `201` read that record back.
+
 ## Corrected and covered by reference tests
 
 - Same-block deploy visibility and sequential storage/ledger writes through a block overlay. Later deploys are invisible to earlier calls; a transaction can deploy and call its own contract. First valid deploy per transaction wins.
