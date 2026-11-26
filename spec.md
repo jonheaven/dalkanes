@@ -1,6 +1,6 @@
 # Dalkanes specification
 
-**Version:** 0.3.0 (draft)
+**Version:** 0.4.0 (draft)
 **Status:** Experimental. The reference indexer implements this version and its unit tests pass; remaining gaps are listed in [IMPLEMENTATION.md](IMPLEMENTATION.md). Mainnet activation is pinned at block 6,466,500 (§2). No live-chain replay is claimed.
 **Carrier:** `OP_RETURN` payload beginning `0xD1 0x01`
 **License:** MIT
@@ -460,7 +460,7 @@ Bitcoin Alkanes price a swap inside the call, and the protostone carries the alk
 | `2` swap | `(2, min_out, vout)`: the least to receive, and the output that receives the other leg | one leg, deposited |
 | `4` remove | `(4, vout, min0, min1)`: the output that receives both legs, and the least of each | this pool's own LP, deposited |
 
-Views: `99` name, `100` symbol, `101` LP supply, `102` leg0 reserve, `103` leg1 reserve, `104` the pair as four little-endian u64s (`leg0.block`, `leg0.tx`, `leg1.block`, `leg1.tx`). A missing slippage cell reads as `0` (no limit). `vout` must be at most 255.
+Views: `99` name, `100` symbol, `101` LP supply, `102` leg0 reserve, `103` leg1 reserve, `104` the pair as four little-endian u64s (`leg0.block`, `leg0.tx`, `leg1.block`, `leg1.tx`). A missing slippage cell reads as `0` (no limit). `vout` must be at most 255. Views and unknown opcodes take no deposit: a call that deposits into one fails, so the deposit goes back to the pointer (§16).
 
 The fee is 30 basis points and stays in the reserves. The first add mints `floor(sqrt(amount0 * amount1)) - 1000` LP and locks 1,000 in the supply; it fails unless the root exceeds 1,000. Later LP is `min(amount0 * supply / reserve0, amount1 * supply / reserve1)`; the excess of the over-supplied leg stays in the reserves, so a wallet SHOULD deposit at the current ratio. A swap pays `reserve_out * f / (reserve_in + f)` with `f = amount_in * 997 / 1000`. Remove pays `reserve * lp / supply` of each leg and accepts only a deposit of the pool's own id; the 1,000 locked LP can never be removed. All divisions floor. Every amount and reserve must fit in an unsigned 63-bit integer; products are taken in 128 bits, and a result that would not fit fails the call.
 

@@ -22,6 +22,8 @@ Hardening pass before 0.4.0 ships (same day, nothing was on chain yet):
 - **Ambiguous is a burn.** Two or more `0xD1` outputs, or one that does not decode, run no call and burn the input parcels. Before this, a `0x01` and a `0x02` call in one transaction both ran and the second receipt overwrote the first.
 - **`ledger_transfer` cannot debit another contract's sheet.** A 12-byte `from` must be the executing contract's own id, so a token cannot pull its units back out of a pool. No existing template debits another contract's 12-byte account.
 - Every `OP_RETURN` output burns an edict sent to it, not only the first one.
+- Pool views (`99`–`104`) refuse a deposit, so a stray deposit returns to the pointer instead of sitting on the pool's sheet outside the reserves.
+- The Howl build did not parse (one extra parenthesis in opcode `106`), so building or recognising it would have stopped the reference indexer. Fixed; Howl's code hash is the one this build produces.
 - Simulate credits deposits to the contract's sheet like the indexer, rejects malformed cells, and returns `outgoing`. Simulate and inspect are concurrency-limited; inspect views are capped at 1,000,000 fuel.
 
 ## 0.3.0 — 2026-11-20
