@@ -44,6 +44,7 @@ Dalkanes is **inspired by** ALKANES. It is **not wire- or ABI-compatible**, and 
 | --- | --- | --- |
 | Reference indexer | dogex (Rust, `wasmi` 1.1.0 (pinned)) | Not yet public. Implements deploy, calls, host ABI, host ledger and reorg undo. |
 | Wallet | Dig | Builds and broadcasts `0xD1` calls; deploys WASM through Doginals inscriptions |
+| Independent indexer | [thedoginalsexplorer/indexers](https://github.com/thedoginalsexplorer/indexers) (Rust, `wasmi` 1.1.0 (pinned)) | Public, MIT. Deploys, calls, host ABI, host ledger, version `0x02` parcels, verified sender and reorg undo. Replays mainnet from block 6,466,500 and passes every vector here. Live at [thedoginalsexplorer.com/dalkanes](https://thedoginalsexplorer.com/dalkanes). |
 | Explorers | dogexplorer, WatchDoge, doginals.lol | Decode `0xD1` calls and show contract pages |
 
 Independent replay, complete reorg tests and a security audit are still needed before an interoperability claim. Negative parser vectors and a pinned interpreter/fuel profile are included in v0.2. The audited implementation repositories are currently private; publishing this specification does not make their source public.
