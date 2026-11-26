@@ -476,23 +476,27 @@ A Proof is one deploy of one canonical bytecode, and then one pull. The indexer 
 
 The pull is opcode `77` with the output index. It runs once. It requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of this alkane onto that output. A second pull fails. The unit is a parcel of this deploy's own id, so it does not add to a parcel of any other Proof.
 
-Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the pose, the face, the mark, the gear, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many have been pulled, and the cap, which is 1.
+Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a hatch or a study, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many have been pulled, and the cap, which is 1.
 
-The picture uses integer arithmetic. The program does not roll a die. It hashes the stored block height, transaction index, time, and sender, and reads that digest:
+The picture is a print. It uses integer arithmetic. The program does not roll a die. It hashes the stored block height, transaction index, time, and sender, and reads that digest:
 
 | Byte | Below | Result |
 | --- | --- | --- |
-| 0 | 140, 180, 210, 230, 248 | Palette: Proof, Blueprint, Newsprint, Solar, Void, then Gold |
-| 1 | 102, 178, 224 | Pose: Front, Sit, Stand, then Poster |
-| 2 | 120, 180, 220, 244 | Face: Calm, Smile, Tongue, Wide, then Laser |
-| 3 | 160, 210, 240 | Mark: Plain, Spot, Ear, then Belly |
-| 4 | 190, 215, 234, 248 | Gear: None, Collar, Glasses, Hat, then Crown |
-| 5 | 200, 230, 246 | Plate: Plain, Crops, Sun, then Flood |
-| 6 | 16 | A caption is drawn. Otherwise the sheet has none |
-| 7 | low two bits | Caption text: `wow`, `much proof`, `such coin`, `very hash` |
-| 8 | low two bits | Ear shape on a front or poster dog |
+| 0 | 110, 160, 196, 224, 244 | Palette: Paper, Graphite, Blueprint, Bone, Night, then Gilt |
+| 1 | 64, 112, 160, 200, 232 | Form: Hatch, Rings, Rules, Blocks, Fan, then Study |
+| 2 | remainder 3 | Density of the marks |
+| 3 | — | Where a ring sits, and which cell of a block field is the accent |
+| 4 | — | Which corner a fan starts from, and whether rules run vertical |
+| 5 | 190, 220, 244 | Plate: Plain, Crops, Frame, then Flood |
+| 6 | 10 | A printer's mark is drawn. Otherwise the sheet has none |
+| 7 | low two bits | Caption text: `A.P.`, `E.A.`, `H.C.`, `P.P.` |
+| 8 | low three bits | Cut of a hatch or study: Full, Disc, Half, Band, Ring, Sides, Base, then Corner |
 
 A later view reads the stored record. It does not read the clock again.
+
+## 21. Shibkanes *(informative)*
+
+A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. The pull, the cap of 1, and opcodes `77`, `99`–`102`, `200`, and `201` are the same shape as a Proof. The SVG is a dog. Pose, face, mark, gear, and plate come from later bytes of the same pull hash. A Shibkane is not a Proof, and the two do not merge.
 
 ---
 
@@ -515,6 +519,7 @@ The reference indexer serves these routes. They are not part of consensus:
 | `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides. Credits `incoming` to the contract's sheet first, as a real deposit would. Rejects malformed cells rather than dropping them. Returns per-contract `contract_writes` and the `outgoing` parcels a real call would place. |
 | `GET /api/alkanes/pool/build?leg0=&leg1=` | Canonical pool deploy body for a pair (§19) |
 | `GET /api/alkanes/proof/build` | Canonical Proof deploy body (§20) |
+| `GET /api/alkanes/shibkane/build` | Canonical Shibkane deploy body (§21) |
 | `POST /api/alkanes/build-call` | Builds a form-A `OP_RETURN` script |
 | `GET /api/alkanes/templates[/{name}]` | Reference contract templates |
 | `POST /api/alkanes/launch/build` | Canonical fair-launch deploy body from name, symbol, cap, and mint size |
