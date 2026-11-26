@@ -24,7 +24,7 @@ The protocol has three on-chain actions and one off-chain action:
 | (none) | Plain Dogecoin transactions | No Dalkanes effect |
 | Simulate | Indexer API (Appendix A) | Dry-run with no state change |
 
-A Dalkane token a wallet holds sits on a Dogecoin output (§16). Spending that output without a version `0x02` parcel burns the balance. The host ledger (§8) is the contract's own sheet: coins move there when a parcel deposits them into a call, and a call can mint or withdraw them back onto an output. An older template may still keep an account balance in that ledger; spending a Dogecoin output does not move those account balances.
+A Dalkane token a wallet holds sits on a Dogecoin output (§16). Spending that output with no `0xD1` parcel message moves the balance to the first output that is not an `OP_RETURN`; a malformed or doubled `0xD1` message burns it. The host ledger (§8) is the contract's own sheet: coins move there when a parcel deposits them into a call, and a call can mint or withdraw them back onto an output. An older template may still keep an account balance in that ledger; spending a Dogecoin output does not move those account balances.
 
 ## 2. Activation
 
@@ -111,7 +111,11 @@ Push parsing:
 - Parsing stops, successfully, at the first other opcode. Later bytes are ignored.
 - A push that runs past the end of the script makes the output not a call.
 
-Indexers MUST scan outputs in order and use the **first** output that yields a cellpack which decodes per §5.2. Other outputs are ignored. A transaction carries at most one Dalkanes call.
+A **`0xD1` output** is an `OP_RETURN` output whose first data push is the single byte `D1` or begins with `D1`, including a first push that runs past the end of the script. A transaction carries at most one Dalkanes message:
+
+- **No `0xD1` output:** no call. Input parcels move to the first non-`OP_RETURN` output (§16).
+- **Exactly one, and it decodes** as a version `0x01` call (forms A–C, §5.2) or a version `0x02` message (§16): that message applies.
+- **Exactly one that does not decode** (a bad cellpack, a truncated push, an unknown version byte), **or more than one `0xD1` output:** the transaction is ambiguous. No call runs, there is no receipt, and every input parcel burns.
 
 Encoders MUST emit form A. Dogecoin Core relays by default only one `OP_RETURN` output of at most 83 script bytes, which is an 80-byte payload. So a relayable call has a cellpack of **at most 78 bytes**. A larger call is valid Dalkanes if a miner includes it, but it will not relay through default nodes.
 
@@ -269,8 +273,8 @@ See §8 for the data model. Amounts are passed as two `i64` halves, `amount = (u
 | --- | --- | --- | --- |
 | `ledger_get` | `(token_b: i64, token_tx: i64, acct_ptr, acct_len, out_ptr) -> i32` | 3,000 | Writes the 16-byte LE balance and returns 16, or −1 |
 | `ledger_mint` | `(token_b, token_tx, to_ptr, to_len, lo: i64, hi: i64) -> i32` | 3,000 | Returns 0 unless `myself == token` and amount > 0. Adds to the balance, saturating, and returns 1. |
-| `ledger_transfer` | `(token_b, token_tx, from_ptr, from_len, to_ptr, to_len, lo: i64, hi: i64) -> i32` | 3,000 | Returns 0 unless `myself == token`, amount > 0, and `from` balance ≥ amount. Otherwise returns 1. If `from == to` it stages nothing (the balance is unchanged); else it stages `from_balance - amount` and `to_balance.saturating_add(amount)`. |
-| `parcel_send` | `(token_b: i64, token_tx: i64, vout: i32, lo: i64, hi: i64) -> i32` | 3,000 | Top-level only. Debits this contract's 12-byte account of `token` and pushes that token onto `vout`. Returns 1, or 0 when the balance is short, the id is invalid, or `vout` is negative. The indexer drops a vout that does not exist or is an `OP_RETURN`. |
+| `ledger_transfer` | `(token_b, token_tx, from_ptr, from_len, to_ptr, to_len, lo: i64, hi: i64) -> i32` | 3,000 | Returns 0 unless `myself == token`, amount > 0, `from` balance ≥ amount, and, when `from` is 12 bytes long, `from` is the executing contract's own id (a token may debit its own sheet but never another contract's). Otherwise returns 1. If `from == to` it stages nothing (the balance is unchanged); else it stages `from_balance - amount` and `to_balance.saturating_add(amount)`. |
+| `parcel_send` | `(token_b: i64, token_tx: i64, vout: i32, lo: i64, hi: i64) -> i32` | 3,000 | Top-level only. Debits this contract's 12-byte account of `token` and pushes that token onto `vout`. Returns 1, or 0 when the balance is short, the id is invalid, or `vout` is negative. If `vout` does not exist or is an `OP_RETURN`, the whole call fails when it returns (§16). |
 
 ### 7.6 Nested calls
 
@@ -301,6 +305,7 @@ value = balance, u128 little-endian (16 bytes)
 
 - A zero balance is the same as an absent key. Indexers SHOULD delete zero entries.
 - Only contract `T` can mint or transfer balances under token `T`. Contracts can read any balance.
+- A 12-byte account is a contract's sheet: what was deposited into that contract (§16). `T` can debit a 12-byte account only when it is `T`'s own id. So a token cannot pull its units back out of a pool or any other contract that holds them. This matches Bitcoin Alkanes, where a contract moves what was deposited into it, not every holder's balance. Shorter and longer accounts are the token's own to define.
 - **Account bytes are opaque.** The protocol does not tie them to Dogecoin addresses, keys or UTXOs. A token contract defines what an account is, and MUST enforce who can move it. A token whose `transfer` takes `from` from calldata without an authorisation check lets anyone move anyone's balance.
 - *(Informative)* The reference token template (`dalkanes-token-v1`) uses the 20-byte verified sender (§6.5) as the account, so an account is a Dogecoin P2PKH address and only its key can spend it. Accounts are passed in calldata as two cells, bytes 0–15 as a u128 and bytes 16–19 as a u32, both little-endian.
 
@@ -312,16 +317,18 @@ A receipt is recorded for every call whose target exists (§5.4), keyed by txid.
 
 ## 10. Invalid and no-op messages
 
-Dalkanes has no cenotaphs for DOGE. A malformed `0xD1` message does not move DOGE. An output parcel is different: spending an output that holds one, without a valid version `0x02` message, burns that parcel (§16).
+Dalkanes has no cenotaphs for DOGE. A malformed `0xD1` message does not move DOGE. An output parcel is different: a malformed or doubled `0xD1` message burns every parcel on the inputs (§5.1, §16).
 
 | Situation | Result |
 | --- | --- |
-| No `0xD1` output, or wrong version byte | Not a call |
-| Cellpack fails §5.2 | No effect, no receipt |
+| No `0xD1` output | Not a call; input parcels move to the first non-`OP_RETURN` output |
+| One `0xD1` output that does not decode (wrong version byte, bad cellpack, truncated), or two or more `0xD1` outputs | Not a call, no receipt; input parcels burn |
+| Cellpack fails §5.2 | No effect, no receipt; input parcels burn (a `0xD1` output that does not decode) |
 | Target has no code | No effect, no receipt |
 | Below activation height | No effect, no receipt |
 | Instantiation error, trap, out of fuel, non-zero status, fatal host error | Receipt with `ok: false`, no state change |
 | Block fuel budget exhausted (§6.2) | Receipt with `ok: false`, `fuel_used: 0`, not executed, no state change |
+| Call returns `0` but names a parcel output that is missing or an `OP_RETURN` (§16) | Receipt with `ok: false`, no state change, deposits refunded |
 | Deploy that fails §4.2 | Ordinary inscription, no contract |
 
 The Dogecoin transaction itself is always valid or invalid by Dogecoin's own rules. DOGE moves as the transaction says, whatever happens to the Dalkanes message.
@@ -393,7 +400,7 @@ The `__dalk_execute` status codes other than `0` are contract-defined.
 
 ## 16. Output parcels (version `0x02`)
 
-Version `0x01` remains a contract call and does not move output balances. Version `0x02` is a parcel message. It is its own `OP_RETURN` payload, not a tag inside a dunestone. Ðunes keep their own rules. An unknown even tag in a dunestone still burns that dune's inputs.
+Version `0x01` remains a contract call and is not a parcel message. Version `0x02` is a parcel message. It is its own `OP_RETURN` payload, not a tag inside a dunestone. Ðunes keep their own rules. An unknown even tag in a dunestone still burns that dune's inputs.
 
 The payload after `0xD1` is:
 
@@ -403,15 +410,23 @@ The payload after `0xD1` is:
 4. Each edict: token block (u64), token tx (u32), amount (u128), output (u32), each LEB128. Amount `0` means the rest of that token.
 5. `1` if a cellpack call follows, otherwise `0`. The cellpack is §5.2.
 
-An indexer gathers every parcel on the inputs. With no `0x02` message, those amounts are burned and the outputs receive none. Edicts run in order. Output `u32::MAX - 1` deposits that amount into the call in this message instead of a vout. Any other output that is missing or is an `OP_RETURN` burns that edict. The pointer receives whatever edicts did not take. A missing or unusable pointer burns the remainder.
+An indexer gathers every parcel on the inputs and assigns them by the transaction's message (§5.1):
 
-A deposit is credited to the contract's host-ledger sheet only when the call succeeds. The account bytes are the 12-byte id of the called contract. The call sees those amounts through `incoming_count` / `incoming_get`. If the call fails, or there is no call, the deposit goes to the pointer when that output can hold it, and otherwise burns.
+- **No parcel message** (no `0xD1` output, or a version `0x01` call): everything goes to the first output that is not an `OP_RETURN`. If every output is an `OP_RETURN`, it burns. This is the Runes rule: an ordinary wallet can consolidate without destroying the asset. The cost is that a plain payment from a parcel output hands the parcel to that output, often the payee. Wallets SHOULD still guard parcel outputs as they guard inscription postage.
+- **A malformed or doubled `0xD1` message:** everything burns.
+- **A version `0x02` message:** as follows.
 
-`env.parcel_mint(vout, amount_lo, amount_hi)` on a successful top-level call creates `amount` units of the called alkane on that output. The indexer ignores a vout that does not exist or is an `OP_RETURN`. The reference template `dalkanes-utxo-token-v1` exposes this as opcode `77` with cells `(77, vout, amount)`.
+Edicts run in order. Output `u32::MAX - 1` deposits that amount into the call in this message instead of a vout. Any other output that is missing or is an `OP_RETURN` (every `OP_RETURN` output, not only the carrier) burns that edict. The pointer receives whatever edicts did not take. An explicit "no pointer" (`u32::MAX`), or a pointer naming a missing or `OP_RETURN` output, burns the remainder.
+
+A deposit is credited to the contract's host-ledger sheet only when the call succeeds. The account bytes are the 12-byte id of the called contract. The call sees those amounts through `incoming_count` / `incoming_get`, one entry per token (edicts of the same token are merged). If the call fails, the target has no code, or the message has no call, the deposit goes to the pointer when that output can hold it, and otherwise burns.
+
+`env.parcel_mint(vout, amount_lo, amount_hi)` on a successful top-level call creates `amount` units of the called alkane on that output. The reference template `dalkanes-utxo-token-v1` exposes this as opcode `77` with cells `(77, vout, amount)`.
 
 `env.parcel_withdraw` does the same for units of the called alkane already on the contract's own account. `env.parcel_send` does it for any token that account holds, which is how a pool pays the other leg of a swap.
 
-Spending an output that holds a parcel without a valid `0x02` message burns it, including when the transaction carries only a version `0x01` call.
+**Landing check.** A contract cannot see the transaction's outputs. So when a call returns `0`, the indexer checks every output that `parcel_mint`, `parcel_withdraw` or `parcel_send` named. If any of them does not exist or is an `OP_RETURN`, the call fails: receipt `ok: false` (error `parcel sent to a missing or OP_RETURN output`), with the fuel it used and its return data, no state change, and any deposit refunded as above. Units are never silently dropped, and a one-per-sender mint is not spent on an output that cannot hold it.
+
+Spending an output that holds a parcel in a transaction with only a version `0x01` call moves the parcel to the first non-`OP_RETURN` output, and the call still runs. Such a call cannot deposit the parcel; that takes a version `0x02` message.
 
 ## 17. Fair-launch tokens *(informative)*
 
@@ -435,22 +450,25 @@ Howl, Ash, and Vigil are three canonical builds. An indexer labels a deploy only
 
 ## 19. Pool *(informative)*
 
-A pool is one deploy and one pair. The bytecode hash is the label. A patched copy is a different contract.
+A pool is one deploy and one pair. The two token ids are part of the bytecode, built like a fair-launch token from its parameters, so there is no initialisation call anyone could front-run. The legs are in canonical order, `leg0 < leg1` comparing `block` then `tx`, so a pair has exactly one canonical build. The indexer labels a deploy `pool`, with its `pair`, only when rebuilding that pair reproduces the code hash. A patched copy is a different contract.
 
-Bitcoin Alkanes price a swap inside the call, and the protostone carries the alkanes being sold. The amounts here are the edicts. The cellpack is only the opcode. An 80-byte payload has no room for a reserve list, and it does not need one.
+Bitcoin Alkanes price a swap inside the call, and the protostone carries the alkanes being sold. The amounts here are the edicts. The cellpack carries only the opcode, the output, and slippage limits. An 80-byte payload has no room for a reserve list, and it does not need one.
 
 | Opcode | Cellpack | Edicts |
 | --- | --- | --- |
-| `1` init | the two token ids | none |
-| `3` add | the output that receives LP | both legs, deposited into the call |
-| `2` swap | minimum out, and the output that receives the other token | the token being sold |
-| `4` remove | the output that receives both legs | the LP parcel |
+| `3` add | `(3, vout, min_lp)`: the output that receives LP, and the least LP to accept | both legs, deposited into the call |
+| `2` swap | `(2, min_out, vout)`: the least to receive, and the output that receives the other leg | one leg, deposited |
+| `4` remove | `(4, vout, min0, min1)`: the output that receives both legs, and the least of each | this pool's own LP, deposited |
 
-The fee is 30 basis points and stays in the reserves. The first add locks 1,000 LP in the supply and does not mint them. Later LP is `min(amount0 * supply / reserve0, amount1 * supply / reserve1)`. A swap pays `reserve_out * (amount_in * 997 / 1000) / (reserve_in + amount_in * 997 / 1000)`. Amounts must fit in an unsigned 63-bit integer.
+Views: `99` name, `100` symbol, `101` LP supply, `102` leg0 reserve, `103` leg1 reserve, `104` the pair as four little-endian u64s (`leg0.block`, `leg0.tx`, `leg1.block`, `leg1.tx`). A missing slippage cell reads as `0` (no limit). `vout` must be at most 255.
+
+The fee is 30 basis points and stays in the reserves. The first add mints `floor(sqrt(amount0 * amount1)) - 1000` LP and locks 1,000 in the supply; it fails unless the root exceeds 1,000. Later LP is `min(amount0 * supply / reserve0, amount1 * supply / reserve1)`; the excess of the over-supplied leg stays in the reserves, so a wallet SHOULD deposit at the current ratio. A swap pays `reserve_out * f / (reserve_in + f)` with `f = amount_in * 997 / 1000`. Remove pays `reserve * lp / supply` of each leg and accepts only a deposit of the pool's own id; the 1,000 locked LP can never be removed. All divisions floor. Every amount and reserve must fit in an unsigned 63-bit integer; products are taken in 128 bits, and a result that would not fit fails the call.
 
 The reserves are the contract's ledger. No key can spend them. The pointer on the parcel message is the caller's own output, so a failed add, swap, or remove returns the deposit. LP moves with an ordinary edict after it is minted.
 
-`GET /api/alkanes/pool/build` returns that deploy body. It does not accept bytecode. Selling a Ðalkane for DOGE is not this pool. That sale is a PSDT: the seller signs the parcel input and the DOGE output they want, and the buyer adds a `0x02` pointer so the parcel follows the output they receive.
+> **Security note.** No token can debit the pool's sheet (§7.5, §8), so a leg's contract cannot pull its units back out of the reserves. It can still mint without limit and sell into the pool. Wallets SHOULD show whether each leg is a canonical build (§17, §18) and warn otherwise.
+
+`GET /api/alkanes/pool/build?leg0={block:tx}&leg1={block:tx}` returns that deploy body, with the legs put in canonical order. It does not accept bytecode. Selling a Ðalkane for DOGE is not this pool. That sale is a PSDT: the seller signs the parcel input and the DOGE output they want, and the buyer adds a `0x02` pointer so the parcel follows the output they receive.
 
 ---
 
@@ -467,7 +485,8 @@ The reference indexer serves these routes. They are not part of consensus:
 | `GET /api/alkanes/calls`, `GET /api/alkanes/calls/{txid}` | Receipts |
 | `GET /api/alkanes/ledger/{block}/{tx}/{account}` | Host-ledger balance (contract sheet, or an account template) |
 | `GET /api/alkanes/output/{txid}/{vout}` | Parcel balances on one output |
-| `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides, and returns per-contract `contract_writes`. |
+| `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides. Credits `incoming` to the contract's sheet first, as a real deposit would. Rejects malformed cells rather than dropping them. Returns per-contract `contract_writes` and the `outgoing` parcels a real call would place. |
+| `GET /api/alkanes/pool/build?leg0=&leg1=` | Canonical pool deploy body for a pair (§19) |
 | `POST /api/alkanes/build-call` | Builds a form-A `OP_RETURN` script |
 | `GET /api/alkanes/templates[/{name}]` | Reference contract templates |
 | `POST /api/alkanes/launch/build` | Canonical fair-launch deploy body from name, symbol, cap, and mint size |

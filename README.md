@@ -24,7 +24,7 @@ Dalkanes is **inspired by** ALKANES. It is **not wire- or ABI-compatible**, and 
 
 1. **Deploy.** Inscribe a WASM module as a Doginals inscription, with content type `application/wasm`. The contract id is the reveal transaction's height and index (the exact multipart attribution still needs verification).
 2. **Call.** Broadcast any transaction with one output `OP_RETURN <0xD1 0x01 cellpack>`. The cellpack is a list of LEB128 integers: target block, target tx, fuel, input count, then the inputs. By convention the first input is an opcode.
-3. **Hold.** A minted alkane sits on a transaction output (version `0x02`, §16 of the spec). Spending that output without a parcel message burns it. Coins a call takes in sit on the contract's ledger until the call sends them back to an output.
+3. **Hold.** A minted alkane sits on a transaction output (version `0x02`, §16 of the spec). Spending that output with no parcel message moves it to the first output that is not an `OP_RETURN`; a malformed or doubled `0xD1` message burns it. Coins a call takes in sit on the contract's ledger until the call sends them back to an output.
 4. **Execute.** Each indexer loads the contract, writes the inputs into guest memory, calls `__dalk_execute`, and commits storage only if the call returns `0`. A failed call leaves no state change but still gets a receipt.
 5. **Read.** Indexers expose contract metadata, storage, receipts, output balances and dry-run simulation over HTTP. That API is informative, not part of consensus.
 

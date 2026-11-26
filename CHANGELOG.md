@@ -5,13 +5,24 @@
 Output parcels. A wallet balance sits on a Dogecoin output. The host ledger is the sheet a contract holds after a deposit. This does not change version `0x01` calls. No parcel exists on chain until something mints one, so indexers pick this up by opening the new `alkane_outpoint` column — they do not replay `0x01` history.
 
 - Version `0x02` parcel: pointer, edicts, optional cellpack call (§16).
-- Spending an output that holds a parcel without that message burns the parcel.
+- Spending an output that holds a parcel with no `0xD1` message (or with a version `0x01` call) moves it to the first non-`OP_RETURN` output, as Runes do. A malformed or doubled `0xD1` message burns it.
 - `env.parcel_mint` creates units of the called alkane on an output. Template `dalkanes-utxo-token-v1`, opcode `77`.
 - Fair-launch bytecode is built from name, symbol, cap, and mint size. The indexer labels a contract only when that rebuild matches the code hash (§17).
 - Deposit output `u32::MAX - 1` fills `incoming_*` and, on a successful call, the contract's ledger sheet.
 - `env.parcel_withdraw` moves the called alkane from the contract's own ledger account onto an output.
 - Canonical Pack builds: Howl (scheduled claim and den), Ash (mint from burned DOGE), Vigil (a daily block window). An indexer labels them only when the bytecode hash matches.
 - `env.parcel_send` pays any token the contract holds onto an output. The canonical pool (§19) uses it: edicts are the amounts, the cellpack is the opcode, LP is a parcel, and 30 bps stays in the reserves.
+
+Hardening pass before 0.4.0 ships (same day, nothing was on chain yet):
+
+- **Pool.** The pair is now part of the bytecode (no `init` to front-run) and the indexer records `pair`. Remove accepts only the pool's own LP; before this, a deposit of any self-minted token could drain the reserves. Products are 128-bit, sums are checked, and add/remove take `min_lp` / `min0` / `min1`. Opcode `1` is gone.
+- **Landing check (§16).** A call that sends a parcel to a missing or `OP_RETURN` output fails as a whole and refunds its deposit, instead of succeeding while the units vanish. This also protects one-per-sender mints from being spent on a bad vout.
+- **No-call deposits** go to the pointer, as §16 already said; the reference had burned them.
+- **Unmentioned parcels follow the first real output.** A spend with no `0xD1` message, or with only a version `0x01` call, moves input parcels to the first non-`OP_RETURN` output instead of burning them. A version `0x01` call no longer destroys the parcels its inputs carry.
+- **Ambiguous is a burn.** Two or more `0xD1` outputs, or one that does not decode, run no call and burn the input parcels. Before this, a `0x01` and a `0x02` call in one transaction both ran and the second receipt overwrote the first.
+- **`ledger_transfer` cannot debit another contract's sheet.** A 12-byte `from` must be the executing contract's own id, so a token cannot pull its units back out of a pool. No existing template debits another contract's 12-byte account.
+- Every `OP_RETURN` output burns an edict sent to it, not only the first one.
+- Simulate credits deposits to the contract's sheet like the indexer, rejects malformed cells, and returns `outgoing`. Simulate and inspect are concurrency-limited; inspect views are capped at 1,000,000 fuel.
 
 ## 0.3.0 — 2026-11-20
 
