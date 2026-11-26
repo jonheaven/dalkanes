@@ -476,9 +476,23 @@ A Proof is one deploy of one canonical bytecode, and then one pull. The indexer 
 
 The pull is opcode `77` with the output index. It runs once. It requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of this alkane onto that output. A second pull fails. The unit is a parcel of this deploy's own id, so it does not add to a parcel of any other Proof.
 
-Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many have been pulled, and the cap, which is 1.
+Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the pose, the face, the mark, the gear, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many have been pulled, and the cap, which is 1.
 
-The picture uses integer arithmetic. The dog is a fixed mask. Fur is quarter-circle paths. The palette is chosen from the first hash byte: Mondrian below 128, Blueprint below 176, Newsprint below 208, Solar below 232, Void below 248, and Gold otherwise. A caption is drawn only when the second hash byte is below 8. The four captions are `wow`, `much proof`, `such coin`, and `very hash`, from the low two bits of the third hash byte.
+The picture uses integer arithmetic. The program does not roll a die. It hashes the stored block height, transaction index, time, and sender, and reads that digest:
+
+| Byte | Below | Result |
+| --- | --- | --- |
+| 0 | 140, 180, 210, 230, 248 | Palette: Proof, Blueprint, Newsprint, Solar, Void, then Gold |
+| 1 | 102, 178, 224 | Pose: Front, Sit, Stand, then Poster |
+| 2 | 120, 180, 220, 244 | Face: Calm, Smile, Tongue, Wide, then Laser |
+| 3 | 160, 210, 240 | Mark: Plain, Spot, Ear, then Belly |
+| 4 | 190, 215, 234, 248 | Gear: None, Collar, Glasses, Hat, then Crown |
+| 5 | 200, 230, 246 | Plate: Plain, Crops, Sun, then Flood |
+| 6 | 16 | A caption is drawn. Otherwise the sheet has none |
+| 7 | low two bits | Caption text: `wow`, `much proof`, `such coin`, `very hash` |
+| 8 | low two bits | Ear shape on a front or poster dog |
+
+A later view reads the stored record. It does not read the clock again.
 
 ---
 
