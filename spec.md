@@ -442,11 +442,15 @@ Howl, Ash, and Vigil are three canonical builds. An indexer labels a deploy only
 
 | | Howl | Ash | Vigil |
 | --- | --- | --- | --- |
-| Supply | 2,048, minted into the contract on the first claim | 10,000 | 1,440 |
-| Claim | Opcode `77`, once per sender. Size is 16, 8, 4, 2, then 1, cutting every 1,440 blocks from the first claim | Opcode `77`. One coin per 1,000,000 koinu burned on the carrier (`alkane_value`), at most 100, once per sender | Opcode `77`, one coin, once per sender |
-| What a Ðune cannot do | The supply is born inside the program. A den (opcode `78`) holds a deposit for 1,440 blocks. Rise (opcode `79`) returns it, plus 1 from the treasury when any remain | The mint amount is the DOGE the call destroys. That DOGE is not paid to anyone | After the first claim, the gate is open only for the first 20 blocks of each 1,440-block cycle |
+| Supply | 2,048, minted into the contract on the first claim | 1,000 | 1,440 |
+| Claim | Opcode `77`, once per sender and once per block. Size is 16, 8, 4, 2, then 1, cutting every 1,440 blocks from the first claim. The call burns 0.01 DOGE per coin (`alkane_value`) | Opcode `77`. One coin per 1,000,000 koinu burned on the carrier, at most 10, once per sender, one mint per block | Opcode `77`, one coin, once per sender, one claim per block |
+| What a Ðune cannot do | The supply is born inside the program. A den (opcode `78`) holds a deposit for 1,440 blocks. Rise (opcode `79`) returns it, plus 1 from the treasury when any remain | The mint amount is the DOGE the call destroys. That DOGE is not paid to anyone | After the first claim, the gate is open only for the first 20 blocks of each 1,440-block cycle, and only one claim lands in each of those blocks |
 
-`GET /api/alkanes/howl/build`, `/ash/build`, and `/vigil/build` return those deploy bodies. They do not accept bytecode.
+One claim per block is the monopoly limit that does not charge a second price for showing up. A new wallet is still a new claim. It has to wait for its own block. Howl's burn and Ember's rising burn make a pile of wallets destroy DOGE, and that DOGE is not paid to anyone.
+
+Quiet, Ember, Collar, and Bone are canonical builds beside the Pack. Quiet's opcode `77` mints `min(16, blocks since the previous claim)`, or 1 on the first claim, cap 1,024. Ember's opcode `77` mints one coin whose burn is `(minted + 1) × 0.01` DOGE, cap 256. Collar's opcode `77` takes exactly one Howl, one Ash, and one Vigil, keeps them, and mints one Collar. The three ids are baked into that bytecode. Bone's opcode `78` locks a Howl deposit for 1,440 blocks and opcode `79` returns it and mints one Bone. Howl's id is baked into that bytecode.
+
+`GET /api/alkanes/howl/build`, `/ash/build`, `/vigil/build`, `/quiet/build`, and `/ember/build` return those deploy bodies. Collar and Bone take the baked ids as query parameters. `POST /api/alkanes/preview` runs one of those builds before it is inscribed. None of these routes accept bytecode.
 
 ## 19. Pool *(informative)*
 

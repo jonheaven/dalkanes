@@ -1,5 +1,9 @@
 # Changelog
 
+## Pack limits — 2026-11-26
+
+No wire change. Howl burns 0.01 DOGE per coin claimed and accepts one claim per block. Ash's cap is 1,000 and a claim mints at most 10, one mint per block. Vigil accepts one claim per block, so a 20-block window mints at most 20. Quiet, Ember, Collar, and Bone are additional canonical builds in [spec.md §18](spec.md#18-the-pack-informative). `POST /api/alkanes/preview` runs those builds before they are inscribed. Nothing here was inscribed.
+
 ## Proof — 2026-11-26
 
 No wire change. A new canonical build, [spec.md §20](spec.md#20-proof-informative). One deploy, one pull, one parcel. The SVG and the traits are the SHA-256 of the pull's block, transaction index, time, and sender. `GET /api/alkanes/proof/build` returns that bytecode and does not accept a replacement.
