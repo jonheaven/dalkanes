@@ -11,6 +11,7 @@ Output parcels. A wallet balance sits on a Dogecoin output. The host ledger is t
 - Deposit output `u32::MAX - 1` fills `incoming_*` and, on a successful call, the contract's ledger sheet.
 - `env.parcel_withdraw` moves the called alkane from the contract's own ledger account onto an output.
 - Canonical Pack builds: Howl (scheduled claim and den), Ash (mint from burned DOGE), Vigil (a daily block window). An indexer labels them only when the bytecode hash matches.
+- `env.parcel_send` pays any token the contract holds onto an output. The canonical pool (§19) uses it: edicts are the amounts, the cellpack is the opcode, LP is a parcel, and 30 bps stays in the reserves.
 
 ## 0.3.0 — 2026-11-20
 

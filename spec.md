@@ -270,6 +270,7 @@ See §8 for the data model. Amounts are passed as two `i64` halves, `amount = (u
 | `ledger_get` | `(token_b: i64, token_tx: i64, acct_ptr, acct_len, out_ptr) -> i32` | 3,000 | Writes the 16-byte LE balance and returns 16, or −1 |
 | `ledger_mint` | `(token_b, token_tx, to_ptr, to_len, lo: i64, hi: i64) -> i32` | 3,000 | Returns 0 unless `myself == token` and amount > 0. Adds to the balance, saturating, and returns 1. |
 | `ledger_transfer` | `(token_b, token_tx, from_ptr, from_len, to_ptr, to_len, lo: i64, hi: i64) -> i32` | 3,000 | Returns 0 unless `myself == token`, amount > 0, and `from` balance ≥ amount. Otherwise returns 1. If `from == to` it stages nothing (the balance is unchanged); else it stages `from_balance - amount` and `to_balance.saturating_add(amount)`. |
+| `parcel_send` | `(token_b: i64, token_tx: i64, vout: i32, lo: i64, hi: i64) -> i32` | 3,000 | Top-level only. Debits this contract's 12-byte account of `token` and pushes that token onto `vout`. Returns 1, or 0 when the balance is short, the id is invalid, or `vout` is negative. The indexer drops a vout that does not exist or is an `OP_RETURN`. |
 
 ### 7.6 Nested calls
 
@@ -408,6 +409,8 @@ A deposit is credited to the contract's host-ledger sheet only when the call suc
 
 `env.parcel_mint(vout, amount_lo, amount_hi)` on a successful top-level call creates `amount` units of the called alkane on that output. The indexer ignores a vout that does not exist or is an `OP_RETURN`. The reference template `dalkanes-utxo-token-v1` exposes this as opcode `77` with cells `(77, vout, amount)`.
 
+`env.parcel_withdraw` does the same for units of the called alkane already on the contract's own account. `env.parcel_send` does it for any token that account holds, which is how a pool pays the other leg of a swap.
+
 Spending an output that holds a parcel without a valid `0x02` message burns it, including when the transaction carries only a version `0x01` call.
 
 ## 17. Fair-launch tokens *(informative)*
@@ -429,6 +432,25 @@ Howl, Ash, and Vigil are three canonical builds. An indexer labels a deploy only
 | What a Ðune cannot do | The supply is born inside the program. A den (opcode `78`) holds a deposit for 1,440 blocks. Rise (opcode `79`) returns it, plus 1 from the treasury when any remain | The mint amount is the DOGE the call destroys. That DOGE is not paid to anyone | After the first claim, the gate is open only for the first 20 blocks of each 1,440-block cycle |
 
 `GET /api/alkanes/howl/build`, `/ash/build`, and `/vigil/build` return those deploy bodies. They do not accept bytecode.
+
+## 19. Pool *(informative)*
+
+A pool is one deploy and one pair. The bytecode hash is the label. A patched copy is a different contract.
+
+Bitcoin Alkanes price a swap inside the call, and the protostone carries the alkanes being sold. The amounts here are the edicts. The cellpack is only the opcode. An 80-byte payload has no room for a reserve list, and it does not need one.
+
+| Opcode | Cellpack | Edicts |
+| --- | --- | --- |
+| `1` init | the two token ids | none |
+| `3` add | the output that receives LP | both legs, deposited into the call |
+| `2` swap | minimum out, and the output that receives the other token | the token being sold |
+| `4` remove | the output that receives both legs | the LP parcel |
+
+The fee is 30 basis points and stays in the reserves. The first add locks 1,000 LP in the supply and does not mint them. Later LP is `min(amount0 * supply / reserve0, amount1 * supply / reserve1)`. A swap pays `reserve_out * (amount_in * 997 / 1000) / (reserve_in + amount_in * 997 / 1000)`. Amounts must fit in an unsigned 63-bit integer.
+
+The reserves are the contract's ledger. No key can spend them. The pointer on the parcel message is the caller's own output, so a failed add, swap, or remove returns the deposit. LP moves with an ordinary edict after it is minted.
+
+`GET /api/alkanes/pool/build` returns that deploy body. It does not accept bytecode. Selling a Ðalkane for DOGE is not this pool. That sale is a PSDT: the seller signs the parcel input and the DOGE output they want, and the buyer adds a `0x02` pointer so the parcel follows the output they receive.
 
 ---
 
