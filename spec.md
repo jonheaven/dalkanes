@@ -206,7 +206,7 @@ These make the call fail even if `__dalk_execute` later returns `0`:
 
 **Verified sender.** If input 0 of the call transaction is a standard P2PKH spend, meaning its `scriptSig` is exactly two pushes `<sig> <pubkey>` with a 33-byte compressed or 65-byte uncompressed key, and the signature verifies under the legacy sighash for input 0 with a P2PKH script code for that key, and the signature's hash type has base type `SIGHASH_ALL` (`0x01`, optionally with `ANYONECANPAY` `0x80`), then the sender is `HASH160(pubkey)`, the 20-byte payload of that Dogecoin address. Otherwise there is no sender. `SIGHASH_ALL` commits to every output, including the carrier, so only the key holder can make a call that names them. Signature checking follows Dogecoin's (lax DER, low-S normalised before verification). A nested call never has a sender.
 
-**Incoming parcels.** Always empty on chain; simulations can supply them. There are no code-hash exceptions.
+**Incoming parcels.** A version `0x01` call sees an empty list. A version `0x02` call sees the deposits routed into it (§16). Simulations may supply a list either way.
 
 ### 6.6 Determinism requirements
 
@@ -417,6 +417,18 @@ A fair-launch token is a contract whose bytecode is the canonical build of a nam
 The rules baked into that build: no premine, one mint per verified sender, mint size fixed, cap a multiple of that size. Opcode `77` takes the output index only. Views `99`–`103` return name, symbol, minted, cap, and mint size. Units are created with `parcel_mint` on that output.
 
 `POST /api/alkanes/launch/build` accepts those four parameters and returns the deploy body. It does not accept bytecode.
+
+## 18. The Pack *(informative)*
+
+Howl, Ash, and Vigil are three canonical builds. An indexer labels a deploy only when its bytecode hash matches that build. A patched copy is a different contract.
+
+| | Howl | Ash | Vigil |
+| --- | --- | --- | --- |
+| Supply | 2,048, minted into the contract on the first claim | 10,000 | 1,440 |
+| Claim | Opcode `77`, once per sender. Size is 16, 8, 4, 2, then 1, cutting every 1,440 blocks from the first claim | Opcode `77`. One coin per 1,000,000 koinu burned on the carrier (`alkane_value`), at most 100, once per sender | Opcode `77`, one coin, once per sender |
+| What a Ðune cannot do | The supply is born inside the program. A den (opcode `78`) holds a deposit for 1,440 blocks. Rise (opcode `79`) returns it, plus 1 from the treasury when any remain | The mint amount is the DOGE the call destroys. That DOGE is not paid to anyone | After the first claim, the gate is open only for the first 20 blocks of each 1,440-block cycle |
+
+`GET /api/alkanes/howl/build`, `/ash/build`, and `/vigil/build` return those deploy bodies. They do not accept bytecode.
 
 ---
 
