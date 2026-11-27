@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- §20 and §21: a Proof or Shibkane collection records each print. Opcode `103` is the count, `104` is the print at an index, `105` is the tag `dalkane-orbital/1`, and `202` is one metadata document. Opcode `200` stays the SVG. The parent cannot be written by the program while it runs as the new id, so the birth writes the count, the slot, and the child's index. No template id, and nothing is inscribed by this change.
+
 - §22: a project card. The deployer of an already inscribed contract inscribes an `application/json` body that names the contract and an image inscription. The reveal key must match the contract's reveal key. A later card from that key replaces it. Opcode `1000` on Bitcoin returns witness bytes stored at initialize; Dogecoin has no witness, so the picture is its own inscription. No program is re-inscribed and the activation height does not move.
 
 Edge-case pass. No consensus rule changed: every sentence below states what the reference already does, now with vectors.

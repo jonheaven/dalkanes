@@ -577,7 +577,13 @@ Opcode `77` on that program, with an output index, births a print. The print's i
 
 The pull requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of the print onto that output. The program is not inscribed again.
 
-Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many have been pulled, and the cap, which is 1.
+Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many units this id has minted, and the cap of this id, which is 1.
+
+Bitcoin's Orbital draft (not Alkanes core) puts membership on the parent. Opcode `77` there calls a template id and the parent records the new supply-1 child. The child returns one metadata document, and each attribute has a stable id beside its label. The specified picture is data the contract draws. Dogecoin has no template id and no witness, so the inscribed program is the template and the picture stays opcode `200`. The birth also records the print, because the program runs as the new id and cannot write the parent's storage.
+
+On the parent, key `0x10` is the count as a little-endian u64. Key `0x11` followed by the index as a little-endian u32 holds the child id: block then tx, each a little-endian u64. On the print, key `0x12` is the parent id in that same sixteen bytes, written by the program from the caller, and key `0x13` is this print's index as a little-endian u64. The indexer writes `0x10`, the slot, and `0x13` when the pull succeeds. A second indexer that runs the program and skips those three keys will not see the collection.
+
+Opcode `103` returns the count, or 0 when `0x10` is absent. Opcode `104` takes an index and returns that sixteen-byte id, or status 6 when the slot is empty. Opcode `105` returns the bytes `dalkane-orbital/1`. Opcode `202` returns one text document. A pulled print includes the standards line, `collection <block>:<tx>`, `index <n>`, then `palette`, `form`, `cut` when the form is a flower or a lattice, `plate`, `caption`, and the stored block, transaction index, and time. An unpulled sheet returns the standards line and says it is unpulled. `GET /api/alkanes/{block}/{tx}` includes `orbital` for these two programs: the standards tag, the count and the first 48 prints on a parent, and the parent id and index on a print. Opcode `104` is how a reader past 48 asks for the rest.
 
 The picture is a sacred-geometry print. It uses integer arithmetic. The program does not roll a die. It hashes the stored block height, transaction index, time, and sender, and reads that digest. The circles sit on a six-fold lattice: the distance between two centers is the radius, so each circle passes through its neighbors.
 
@@ -598,7 +604,7 @@ Opcode `77` on a print, rather than on the inscribed program, does not birth ano
 
 ## 21. Shibkanes *(informative)*
 
-A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. Opcode `77` births a Shibkane the same way it births a Proof. The cap of each print is 1, and opcodes `99`–`102`, `200`, and `201` are the same shape. The SVG is a dog. Pose, face, mark, gear, and plate come from later bytes of the same pull hash. A Shibkane is not a Proof, and the two do not merge.
+A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. Opcode `77` births a Shibkane the same way it births a Proof, including the collection keys in §20. The cap of each print is 1. Opcodes `99`–`102`, `103`–`105`, `200`, `201`, and `202` are the same shape. The document's attributes are `palette`, `pose`, `look`, `mark`, `gear`, `plate`, and `caption`. The SVG is a dog. Pose, face, mark, gear, and plate come from later bytes of the same pull hash. A Shibkane is not a Proof, and the two do not merge.
 
 ## 22. Project card
 
