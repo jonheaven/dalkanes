@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- §21: a Shibkane collection stops at 420. One pull per block, one pull per verified sender. Opcode `106` returns 420. The indexer uses the same refusal as Proof. The document names `ears` (Point, Tall, Wide, Flop) from the low two bits of hash byte 8, which the picture already drew. Nothing here is inscribed by this change. `POST /api/alkanes/preview` accepts `kind: shibkane`.
+
 - §20: how a client shows a print. The inscription is the program. A holding with `clone_of` set is one collectible, tagged as a Dalkane, and the picture is opcode `200` from `POST /api/alkanes/simulate`, decoded as SVG. The factory stays a token. Appendix A names `clone_of` on `GET /api/alkanes/markets`.
 
 - §18: view opcodes for Howl, Ash, Quiet, Ember, Vigil, Collar, and Bone. Howl's `101` is the treasury left in the contract. `102` is the era, `103` the claim size, `104` the coins this sender has in a den, `105` the unlock height, and `106` is 1 when this sender has claimed.
@@ -11,7 +13,7 @@
 
 - `vectors/mainnet-receipts.json`: the 13 mainnet calls with a receipt through block 6,475,327, on which dogex and an independent indexer agree (ok, fuel_used, return_hex).
 
-- §20: a Proof collection stops at 420. One pull per block, one pull per verified sender. Opcode `106` returns 420. The indexer refuses a birth past the cap, in a block that already pulled, or from an address that already pulled. Shibkane is unchanged. Nothing here is inscribed by this change.
+- §20: a Proof collection stops at 420. One pull per block, one pull per verified sender. Opcode `106` returns 420. The indexer refuses a birth past the cap, in a block that already pulled, or from an address that already pulled. Nothing here is inscribed by this change.
 
 - §18: Kibble, a canonical build beside the Pack. Opcode `77` mints 10,000, once per verified sender and once per block, cap 432,000,000. A missed block stays open. No deposit, no burn, no reserved id. `GET /api/alkanes/kibble/build` returns that bytecode and does not accept a replacement. Nothing here is inscribed by this change.
 

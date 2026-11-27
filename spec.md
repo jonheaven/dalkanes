@@ -583,7 +583,7 @@ Opcode `77` on that program, with an output index, births a print. The print's i
 
 The pull requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of the print onto that output. The program is not inscribed again.
 
-A Proof collection births 420 prints. One pull per block, and one pull per verified sender. The indexer refuses the birth before execution when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present. The receipt is `ok: false` and `fuel_used` is 0, with `the collection is full`, `this block already pulled`, or `this address already pulled`, and no new id. The block fuel budget is unchanged. A refused pull does not consume the block or the address. On a successful pull the indexer writes `0x14` as the height, u64 little-endian, and key `0x15` followed by the 20-byte sender, whose value is the single byte `0x01`. Opcode `106` returns 420. Shibkane uses the same birth and does not use this gate.
+A Proof collection births 420 prints. One pull per block, and one pull per verified sender. The indexer refuses the birth before execution when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present. The receipt is `ok: false` and `fuel_used` is 0, with `the collection is full`, `this block already pulled`, or `this address already pulled`, and no new id. The block fuel budget is unchanged. A refused pull does not consume the block or the address. On a successful pull the indexer writes `0x14` as the height, u64 little-endian, and key `0x15` followed by the 20-byte sender, whose value is the single byte `0x01`. Opcode `106` returns 420. Shibkane uses this same gate, with the cap in §21.
 
 Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many units this id has minted, and the cap of this id, which is 1.
 
@@ -622,7 +622,21 @@ Opcode `77` on a print, rather than on the inscribed program, does not birth ano
 
 ## 21. Shibkanes *(informative)*
 
-A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. Opcode `77` births a Shibkane the same way it births a Proof, including the collection keys in §20, without Proof's cap of 420 or its one-pull gate. The cap of each print is 1. Opcodes `99`–`102`, `103`–`105`, `200`, `201`, and `202` are the same shape. The document's attributes are `palette`, `pose`, `look`, `mark`, `gear`, `plate`, and `caption`. The SVG is a dog. Pose, face, mark, gear, and plate come from later bytes of the same pull hash. A Shibkane is not a Proof, and the two do not merge.
+A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. Opcode `77` births a Shibkane the same way it births a Proof, including the collection keys in §20 and the same refusal before execution. A Shibkane collection births 420 prints. One pull per block, and one pull per verified sender. The indexer refuses the birth when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present, with the same receipts as §20. On a successful pull the indexer writes `0x14` and `0x15` as §20 describes. The cap of each print is 1. Opcode `106` returns 420. Opcodes `99`–`102`, `103`–`105`, `200`, `201`, and `202` are the same shape. The document's attributes are `palette`, `pose`, `look`, `mark`, `gear`, `plate`, `ears`, and `caption`. The SVG is a dog. A Shibkane is not a Proof, and the two do not merge.
+
+The picture uses integer arithmetic. The program hashes the stored block height, transaction index, time, and sender, and reads that digest. Ears are part of the drawing and of the document, so a client that lists attributes does not drop a difference the picture shows.
+
+| Byte | Below | Result |
+| --- | --- | --- |
+| 0 | 140, 180, 210, 230, 248 | Palette: Paper, Blueprint, Newsprint, Solar, Void, then Gold |
+| 1 | 102, 178, 224 | Pose: Front, Sit, Stand, then Poster |
+| 2 | 120, 180, 220, 244 | Look: Calm, Smile, Tongue, Wide, then Laser |
+| 3 | 160, 210, 240 | Mark: Plain, Spot, Ear, then Belly. Ear here is a patch, not the silhouette |
+| 4 | 190, 215, 234, 248 | Gear: None, Collar, Glasses, Hat, then Crown |
+| 5 | 200, 230, 246 | Plate: Plain, Crops, Sun, then Flood |
+| 6 | 16 | A caption is set. Otherwise the sheet has none |
+| 7 | low two bits | Caption: `wow`, `much proof`, `such coin`, `very hash` |
+| 8 | low two bits | Ears: Point, Tall, Wide, then Flop |
 
 ## 22. Project card
 
