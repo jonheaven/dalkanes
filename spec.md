@@ -389,7 +389,7 @@ These come from the ALKANES standard contracts. They make explorers and wallets 
 | `77` | mint |
 | `99` / `100` / `101` | name / symbol / total supply (views) |
 | `102`–`104` | cap / minted / value per mint (free-mint views) |
-| `1000` | data / attributes |
+| `1000` | data / attributes. On Bitcoin this returns the bytes stored at initialize. A contract already inscribed on Dogecoin names its picture with a project card (§22) |
 
 The `__dalk_execute` status codes other than `0` are contract-defined. A receipt records a non-zero status as `error: "status N"`. The canonical builds (§17–§21) use these:
 
@@ -600,6 +600,40 @@ Opcode `77` on a print, rather than on the inscribed program, does not birth ano
 
 A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. Opcode `77` births a Shibkane the same way it births a Proof. The cap of each print is 1, and opcodes `99`–`102`, `200`, and `201` are the same shape. The SVG is a dog. Pose, face, mark, gear, and plate come from later bytes of the same pull hash. A Shibkane is not a Proof, and the two do not merge.
 
+## 22. Project card
+
+Bitcoin Alkanes do not compile a logo into the program. The stock free-mint reads witness payload 0 during initialize, stores it, and opcode `1000` returns those bytes. Indexers call that view and publish the result as the logo. Dogecoin has no witness, and an `OP_RETURN` cannot hold a PNG. The picture is its own Doginals inscription. The card is a second inscription that points the contract at that picture.
+
+This does not change the program, the contract id, or the activation height. Contracts already inscribed keep their ids. A new program may also implement opcode `1000` so a view returns an inscription id. When a project card is present, indexers use the card.
+
+### 22.1 Carrier
+
+A project card is a Doginals inscription whose content type is `application/json` (a leading match, compared case-insensitively). The body is at most 2,048 bytes of JSON:
+
+| Field | Rule |
+| --- | --- |
+| `dalkane` | Required. `block:tx` of an inscribed contract. Not a print (`clone_of` is empty). |
+| `image` | Required. Inscription id `txid` + `i` + index, 64 hex digits. That inscription is already indexed and its content type begins with `image/`. |
+| `name` | Optional. At most 64 characters. |
+| `description` | Optional. At most 280 characters. |
+| `links` | Optional. At most 4 objects `{ "label", "url" }`. The label is at most 32 characters. The url is `http://` or `https://`, at most 200 characters, with no whitespace. |
+
+The schema is [schemas/project-card.schema.json](schemas/project-card.schema.json).
+
+### 22.2 Who may write it
+
+The reveal redeem starts with the signer's pubkey and `OP_CHECKSIGVERIFY`. Core has already checked that signature. The indexer takes `hash160` of that pubkey.
+
+That hash must equal the deployer recorded for `dalkane`. The deployer is the same pubkey hash from the transaction that revealed the contract. A print has no deployer. A contract indexed before this field existed is filled at startup by reading that reveal from the shadow block index, then from Core for a height the shadow does not have.
+
+The same key may inscribe a later card. The later card replaces the stored one. A different key's card is ignored. If the picture inscription is not indexed yet, the card is ignored: inscribe the picture, wait until it is in an earlier block, then inscribe the card.
+
+### 22.3 What an indexer stores
+
+The card is not a field of the program and not a call. It lives beside the contract, keyed by the alkane id. A reorg restores the previous card. An alkanes replay does not delete it.
+
+`GET /api/alkanes/markets` and `GET /api/alkanes/{block}/{tx}` include `card` (the stored object, or null) and `deployer` (the P2PKH address of the reveal key, or null). Clients show `card.image` through the inscription content route. A missing card may fall back to a picture the site shipped with the pack.
+
 ---
 
 ## Appendix A. Indexer HTTP API *(informative)*
@@ -620,7 +654,7 @@ The reference indexer serves these routes. They are not part of consensus:
 | `GET /api/alkanes/output/{txid}/{vout}` | Parcel balances on one output |
 | `POST /api/alkanes/outputs` | Parcel balances on up to 500 outputs in one call (`{"outpoints": ["txid:vout", …]}`); returns only outputs that hold something. A wallet reads its holdings this way. |
 | `GET /api/alkanes/{block}/{tx}/holders` | Addresses holding the token on their outputs, largest first, with holder count, output count and circulating units. A holder is the address an output pays. |
-| `GET /api/alkanes/markets` | Recent deploys with kind, label, recent calls, holder count and circulating units, plus name, symbol, cap and minted for canonical builds (§17–§19) |
+| `GET /api/alkanes/markets` | Recent deploys with kind, label, recent calls, holder count and circulating units, plus name, symbol, cap and minted for canonical builds (§17–§19). `card` and `deployer` are the project card (§22) |
 | `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides. Credits `incoming` to the contract's sheet first, as a real deposit would. Rejects malformed cells rather than dropping them. Returns per-contract `contract_writes` and the `outgoing` parcels a real call would place. |
 | `GET /api/alkanes/pool/build?leg0=&leg1=` | Canonical pool deploy body for a pair (§19) |
 | `GET /api/alkanes/proof/build` | Canonical Proof deploy body (§20) |

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jonheaven/dalkanes/schemas/project-card.schema.json",
+  "title": "Dalkane project card",
+  "description": "Inscription body that points an already deployed contract at an image inscription. See spec.md §22.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["dalkane", "image"],
+  "properties": {
+    "dalkane": {
+      "type": "string",
+      "pattern": "^[0-9]+:[0-9]+$",
+      "description": "Contract id, block:tx. Not a print."
+    },
+    "image": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{64}i[0-9]+$",
+      "description": "Inscription id of an image/png, image/svg+xml, or other image/* body."
+    },
+    "name": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 280 },
+    "links": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "url"],
+        "properties": {
+          "label": { "type": "string", "minLength": 1, "maxLength": 32 },
+          "url": { "type": "string", "minLength": 8, "maxLength": 200, "pattern": "^https?://\\S+$" }
+        }
+      }
+    }
+  }
+}

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- §22: a project card. The deployer of an already inscribed contract inscribes an `application/json` body that names the contract and an image inscription. The reveal key must match the contract's reveal key. A later card from that key replaces it. Opcode `1000` on Bitcoin returns witness bytes stored at initialize; Dogecoin has no witness, so the picture is its own inscription. No program is re-inscribed and the activation height does not move.
+
 Edge-case pass. No consensus rule changed: every sentence below states what the reference already does, now with vectors.
 
 - §5.1: `OP_0` counts as a push, so form A followed by `OP_0` is a broken `0xD1` output; `OP_1`–`OP_16`, `OP_1NEGATE` and `OP_PUSHDATA4` stop parsing. A transaction's `0xD1` outputs are classified by the first push before anything decodes. Coinbase transactions are processed like any other and have no sender.
