@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated 2026-11-25 for v0.4. The reference is dogex; its implementation source is not yet public. This is still experimental, **not a production-readiness or live-chain-replay claim**.
+Updated 2026-11-26 for v0.4. The reference is dogex; its implementation source is not yet public. This is still experimental, **not a production-readiness or live-chain-replay claim**.
 
 Version `0x02` output parcels, `parcel_mint`, and the `dalkanes-utxo-token-v1` template are in the reference. Version `0x01` calls are unchanged. Opening the indexer creates the `alkane_outpoint` column; existing `0x01` receipts do not need a replay.
 
@@ -28,6 +28,10 @@ Proof is a canonical build beside Howl, Ash, Vigil, and the pool. `GET /api/alka
 The reference's targeted Alkanes and activation tests pass on Linux. Positive and negative wire cases are mirrored in [vectors/parser.json](vectors/parser.json) and the explorers' tests; host WAT cases are in [vectors/host-abi/](vectors/host-abi/). The TypeScript helper passes the wire vector checker. None of this replaces independent replay or an audit.
 
 ## Remaining gaps / migration warnings
+
+- **Sender and `0xab` (replay needed).** Reference builds before dogex `73be46b` (2026-11-26) deleted `0xab` bytes from inside the P2PKH script code, so a key whose HASH160 contains `0xab` had no sender (§6.5). The first mainnet Howl claim (tx `9d361c83…`, block 6,474,090) got `status 3` under such a build; the rule gives it a sender, so it claims. Any indexer that processed blocks from 6,474,090 with an affected build must replay from the activation height. [vectors/sender.json](vectors/sender.json) catches the bug.
+- **Pre-activation state.** Early reference databases indexed below 6,466,500 under an operator setting. The reference now drops that state once at startup (contracts, storage, ledger, receipts and parcels with ids or heights below activation) so it matches an indexer that starts empty at activation (§2).
+- **Activity index (informative).** The reference keeps one row per transaction that touched Dalkanes, globally and per token, for `/api/alkanes/events`, `/activity` and `/history`. It is derived during the same pass and removed on a reorg; it is not state. Receipts carry the informative fields listed in §9. Before this index, "recent calls" walked receipts in txid order, which is not time order.
 
 - **Reindex required (pre-mainnet databases only).** v0.2 deliberately changed experimental state semantics, and v0.3 changes receipts for setup failures and adds the block budget. Mainnet has no Dalkanes state before block 6,466,500, so a mainnet indexer built from v0.3 needs no reindex. Do not reuse an old Dalkanes database as if it were v0.3 state. No automatic migration or historical-state compatibility is claimed.
 - **Activation.** Mainnet activates at block 6,466,500 (§2); an indexer needs the v0.3 reference build before that block. Testnet remains off. Environment overrides work on regtest only.

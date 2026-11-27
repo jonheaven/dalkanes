@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+Edge-case pass. No consensus rule changed: every sentence below states what the reference already does, now with vectors.
+
+- §5.1: `OP_0` counts as a push, so form A followed by `OP_0` is a broken `0xD1` output; `OP_1`–`OP_16`, `OP_1NEGATE` and `OP_PUSHDATA4` stop parsing. A transaction's `0xD1` outputs are classified by the first push before anything decodes. Coinbase transactions are processed like any other and have no sender.
+- §6.5: the sender's script code is the P2PKH script as data. Removing `0xab` bytes from inside the pubkey hash loses the sender. `vectors/sender.json` is the mainnet Howl claim that hit this in the reference before dogex `73be46b`.
+- §16 split into §16.1 format, §16.2 routing, §16.3 deposits, §16.4 sending part of a balance. New in the text: form C′ and trailing pushes after form A′; a pointer above `u32::MAX` or a has-call other than 0/1 does not decode; the pointer may be `u32::MAX − 1` and then deposits the remainder (a refund of it burns); edicts clamp, skip tokens the inputs lack, and run in order; there is no Runes split edict; per-token amounts saturate at 2^128 − 1; any non-`OP_RETURN` script can hold a parcel.
+- §7.5: `parcel_send` also returns 0 for a zero amount or a nested call; fuel is charged before any `parcel_*` check.
+- §9: `born` is consensus-relevant. The reference's informative receipt fields are listed and in the schema.
+- §10: rows for a `0x02` message with no call, a missing target, a failed call, and a burned edict.
+- §11: parcels and print ids are restored on a reorg.
+- §13: status codes of the canonical builds.
+- §2: a database that indexed below activation must drop that state.
+- Appendix A: `/api/alkanes/events`, `/{id}/activity` and `/{id}/history`; `/calls` is ordered by height.
+- `reference/decoder.ts` follows v0.4: `classifyMessage`, parcel encode/decode and routing. `extractCall` and `attachedValue` no longer take the first output that decodes.
+- `vectors/parcel.json` and `vectors/sender.json`, mirrored by dogex tests `message_edge_cases`, `routing_edge_cases` and `howl_mainnet_claim_has_a_sender`.
+
 - A pull of an inscribed Proof or Shibkane births a print. The new id is that transaction's `block:tx`, the inscribed program is what runs, and the parcel is of the new id. The program is not inscribed again. A create that carries new WASM still does not fit Dogecoin (§14, §20).
 
 - `vectors/host-abi/rollback_parent_bad_buffer.wat`, `rollback_parent_failed_child.wat` and `rollback_parent_grandchild.wat` did not parse: part of each header comment had wrapped onto lines that were not comments. Those lines are comments again; the modules are unchanged.

@@ -2,9 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/jonheaven/dalkanes/schemas/call-receipt.schema.json",
   "title": "Dalkanes call receipt",
-  "description": "Recorded for every call whose target exists (spec section 9). ok, fuel_used and return_hex are consensus-relevant; error and logs are diagnostic.",
+  "description": "Recorded for every call whose target exists (spec section 9). ok, fuel_used, return_hex and born are consensus-relevant; error and logs are diagnostic. The fields after born are informative: the reference derives them from the transaction and the outcome, and older receipts omit them.",
   "type": "object",
   "required": ["txid", "height", "target", "ok", "fuel_used", "return_hex"],
+  "$defs": {
+    "amount": {
+      "type": "object",
+      "required": ["id", "amount"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[0-9]+:[0-9]+$" },
+        "amount": { "type": "string", "pattern": "^[0-9]+$", "description": "u128 in decimal" },
+        "vout": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      }
+    }
+  },
   "properties": {
     "txid": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "height": { "type": "integer", "minimum": 0 },
@@ -13,7 +24,16 @@
     "fuel_used": { "type": "integer", "minimum": 0, "maximum": 5000000 },
     "return_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$", "maxLength": 32768 },
     "error": { "type": ["string", "null"] },
-    "logs": { "type": "array", "items": { "type": "string" } }
+    "logs": { "type": "array", "items": { "type": "string" } },
+    "born": { "type": "string", "pattern": "^[0-9]+:[0-9]+$", "description": "The print id this call bore (spec section 20). Absent otherwise." },
+    "tx_index": { "type": "integer", "minimum": 0, "description": "Informative." },
+    "time": { "type": "integer", "minimum": 0, "description": "Informative. Block header nTime." },
+    "version": { "enum": [1, 2], "description": "Informative. 1 = call message, 2 = parcel message with a call." },
+    "inputs": { "type": "array", "maxItems": 256, "items": { "type": "string", "pattern": "^[0-9]+$" }, "description": "Informative. Cellpack inputs in decimal." },
+    "sender": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "Informative. Verified sender HASH160 (spec section 6.5)." },
+    "value": { "type": "integer", "minimum": 0, "description": "Informative. Koinu burned on the carrier." },
+    "deposits": { "type": "array", "items": { "$ref": "#/$defs/amount" }, "description": "Informative. Parcels deposited into the call." },
+    "outgoing": { "type": "array", "items": { "$ref": "#/$defs/amount" }, "description": "Informative. Parcels a successful call placed on outputs." }
   },
   "additionalProperties": true
 }
