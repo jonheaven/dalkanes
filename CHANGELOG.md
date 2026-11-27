@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 (2026-11-27)
+
+This pass pins and documents what the reference already does. It changes no rule, no receipt and no stored key, so no indexer needs to reindex.
+
+- §20.1 (normative): print births. Which contracts are print programs, when a pull is refused before execution, the print's id and caller, and the keys `0x10`, `0x11`, `0x13`, `0x14` and `0x15` written on success. §20, §21 and §23 are no longer marked informative.
+- §24: the table of canonical code hashes. Print programs are recognised by these hashes; the other rows are labels only. §6.6 notes that births are the one place execution depends on a code hash.
+- "One pull per verified sender" now says what it means: one per address, not one per person.
+- §23: the Doge Orbital hash is of the build with CRLF line ends, whatever a checkout uses. Before this, an LF checkout of the reference built a different hash.
+- vectors/mainnet-receipts.json: the Proof program's deploy, the four mainnet Proof prints, two refused pulls, and the other calls through block 6,475,565, each with a note on how it was checked.
+
+The items below were listed as Unreleased and ship with 0.4.1.
+
 
 - §23: Doge Orbital. One inscribed copy of the site mark. Opcode `77` births a print until 420, with Proof's refusal. Opcode `200` returns that face. Classic is untinted. Night, Sakura, Sea, Ember, and Ghost multiply the coat channels. `POST /api/alkanes/preview` accepts `kind: doge`. Nothing here is inscribed by this change.
 

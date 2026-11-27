@@ -9,7 +9,7 @@ Every vector here comes from the reference indexer's unit tests, or from the vec
 | [host-abi/](host-abi/) | Small WAT contracts with the outputs the reference runtime is tested to produce (including nested rollback and setup-failure fuel) |
 | [block-fuel.json](block-fuel.json) | Per-block fuel budget: grants, `fuel_used` and the exhausted receipt across a block |
 | [parcel.json](parcel.json) | One message per transaction (§5.1: none, call, parcel, ambiguous), version `0x02` push forms and field limits (§16.1), routing (§16.2: clamping, skipped edicts, no split, pointer as deposit), canonical parcel scripts |
-| [mainnet-receipts.json](mainnet-receipts.json) | Every mainnet call with a receipt through block 6,475,327, as two independent indexers (dogex and thedoginalsexplorer/indexers) both record it: ok, fuel used, return data, the status of failures, burns, senders and the parcels placed |
+| [mainnet-receipts.json](mainnet-receipts.json) | Every mainnet call with a receipt through block 6,475,565: ok, fuel used, return data, the status of failures, burns, senders and the parcels placed. Through block 6,475,327 both independent indexers (dogex and thedoginalsexplorer/indexers) record each one. Later cases, including the Proof program's deploy, the four Proof prints (§20.1) and two refused pulls, each say how they were checked |
 | [sender.json](sender.json) | Verified sender (§6.5) from a real mainnet transaction whose pubkey hash contains `0xab` |
 
 The schema is in [../schemas/vectors.schema.json](../schemas/vectors.schema.json).

@@ -1,6 +1,6 @@
 # Dalkanes specification
 
-**Version:** 0.4.0 (draft)
+**Version:** 0.4.1 (draft)
 **Status:** Experimental. The reference indexer implements this version and its unit tests pass; remaining gaps are listed in [IMPLEMENTATION.md](IMPLEMENTATION.md). Mainnet activation is pinned at block 6,466,500 (§2). No live-chain replay is claimed.
 **Carrier:** `OP_RETURN` payload beginning `0xD1 0x01`
 **License:** MIT
@@ -221,7 +221,7 @@ These make the call fail even if `__dalk_execute` later returns `0`:
 
 - The interpreter MUST be deterministic and MUST NOT expose clocks, randomness, network or filesystem access.
 - Contracts SHOULD NOT use floating-point instructions. This version does not forbid them. A future version may reject modules that use them.
-- Execution MUST NOT depend on a contract's code hash.
+- Execution MUST NOT depend on a contract's code hash, with one exception: whether a call to a print program births a print (§20.1). That test compares the SHA-256 of the deployed wasm with the hashes published in §24.
 
 ## 7. Host ABI (`env` module)
 
@@ -529,7 +529,7 @@ Wallets SHOULD:
 
 A fair-launch token is a contract whose bytecode is the canonical build of a name, a symbol, a cap, and a mint size. The indexer labels it only when rebuilding those parameters produces the same code hash. A file that copies the header and changes the rules does not match.
 
-The rules baked into that build: no premine, one mint per verified sender, mint size fixed, cap a multiple of that size. Opcode `77` takes the output index only. Views `99`–`103` return name, symbol, minted, cap, and mint size. Units are created with `parcel_mint` on that output.
+The rules baked into that build: no premine, one mint per verified sender address, mint size fixed, cap a multiple of that size. Opcode `77` takes the output index only. Views `99`–`103` return name, symbol, minted, cap, and mint size. Units are created with `parcel_mint` on that output.
 
 `POST /api/alkanes/launch/build` accepts those four parameters and returns the deploy body. It does not accept bytecode.
 
@@ -575,15 +575,46 @@ The reserves are the contract's ledger. No key can spend them. The pointer on th
 
 `GET /api/alkanes/pool/build?leg0={block:tx}&leg1={block:tx}` returns that deploy body, with the legs put in canonical order. It does not accept bytecode. Selling a Ðalkane for DOGE is not this pool. That sale is a PSDT: the seller signs the parcel input and the DOGE output they want, and the buyer adds a `0x02` pointer so the parcel follows the output they receive.
 
-## 20. Proof *(informative)*
+## 20. Proof
 
-One inscription of the canonical bytecode is the program. The indexer labels that deploy `proof` only when the bytecode hash matches `GET /api/alkanes/proof/build`. A patched copy is a different program. The route does not accept bytecode.
+§20.1 is normative and applies to the three print programs: Proof (this section), Shibkane (§21) and Doge Orbital (§23). The rest of §20, §21 and §23 describes the canonical programs; their behaviour comes from their bytecode, not from extra rules.
+
+One inscription of the canonical bytecode is the program. The indexer labels that deploy `proof` only when the SHA-256 of its wasm equals the Proof hash in §24, which is what `GET /api/alkanes/proof/build` returns. A patched copy is a different program. The route does not accept bytecode.
+
+### 20.1 Print births
+
+A deployed contract is a **print program** when the SHA-256 of its wasm equals the Proof, Shibkane or Doge Orbital hash in §24. Nothing else makes it one: not a label, a route, a project card (§22) or the inscription's content type. A contract born by §20.1 is a **print**, and a print is never a print program.
+
+A **pull** is a call (§5, version `0x01` or `0x02`) whose target is a print program and whose first input is `77`. For every pull an indexer MUST do the following.
+
+1. **Refuse before execution** when any of these holds. Let `count` be the program's key `0x10` read as a little-endian u64 (absent is 0).
+   - `count` is at least the collection cap: 420 for each of the three programs.
+   - The program's key `0x14`, read the same way, equals this block's height.
+   - The call has a verified sender (§6.5) and the program has key `0x15` followed by that 20-byte sender.
+   - This transaction already created a contract id (a deploy, §4). One transaction has one id.
+
+   A refused pull runs no code. Its receipt is `ok: false`, `fuel_used` 0, empty return data and no `born`. It does not use the block fuel budget (§6.2), writes nothing, and does not use up the block or the address. A deposit is handled as for a failed call (§16.3). The error text is informative; the reference uses `the collection is full`, `this block already pulled`, `this address already pulled` and `this transaction already deploys a contract`.
+2. **Otherwise run the program as the print.** The print's id is this transaction's `block:tx`. The call executes the program's code with `myself` set to that id, the caller set to the program (§6.5), the print's own empty storage, and the call's inputs, fuel grant, attached value, verified sender and deposits. Deposits are credited to the print's sheet while it runs (§16.3).
+3. **On success** (the call returns `0` and passes the landing check, §16.3), the print becomes a contract with the program's code, and the receipt's `born` is the print id (§9). In addition to the call's own writes, the indexer MUST write, with `index` = `count`:
+   - on the program, key `0x10` = `count + 1` as a little-endian u64;
+   - on the program, key `0x11` followed by `index` as a little-endian u32 = the print id, `block` then `tx`, each a little-endian u64 (16 bytes);
+   - on the program, key `0x14` = this block's height as a little-endian u64;
+   - on the program, when there is a verified sender, key `0x15` followed by the 20 sender bytes = the single byte `0x01`;
+   - on the print, key `0x13` = `index` as a little-endian u64.
+
+   The canonical programs do not write these keys themselves. Running as the print, they write the print's keys `0x01`, `0x02` and `0x12` (the parent id, read from the caller).
+4. **On failure** no id is created and none of the keys in step 3 are written, so the block and the address are not used up.
+5. A call whose target is a print, including opcode `77`, is an ordinary call (§5). The canonical programs fail a second `77` on a print.
+
+A reorg undoes a birth with the rest of its block (§11).
+
+"One pull per verified sender" means one per address. It limits addresses, not people: a new address can pull again.
 
 Opcode `77` on that program, with an output index, births a print. The print's id is the pull transaction's own `block:tx`. The indexer runs the inscribed program as that id: the pull's storage and the one minted parcel belong to the print, and a second `77` on the same print fails. A later `77` on the program births another print, until the collection gate below. Two prints do not add. A transaction that deploys a contract cannot also be a print, because one transaction has one id.
 
 The pull requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of the print onto that output. The program is not inscribed again.
 
-A Proof collection births 420 prints. One pull per block, and one pull per verified sender. The indexer refuses the birth before execution when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present. The receipt is `ok: false` and `fuel_used` is 0, with `the collection is full`, `this block already pulled`, or `this address already pulled`, and no new id. The block fuel budget is unchanged. A refused pull does not consume the block or the address. On a successful pull the indexer writes `0x14` as the height, u64 little-endian, and key `0x15` followed by the 20-byte sender, whose value is the single byte `0x01`. Opcode `106` returns 420. Shibkane uses this same gate, with the cap in §21.
+A Proof collection births 420 prints. One pull per block, and one pull per verified sender address (§20.1). The indexer refuses the birth before execution when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present. The receipt is `ok: false` and `fuel_used` is 0, with `the collection is full`, `this block already pulled`, or `this address already pulled`, and no new id. The block fuel budget is unchanged. A refused pull does not consume the block or the address. On a successful pull the indexer writes `0x14` as the height, u64 little-endian, and key `0x15` followed by the 20-byte sender, whose value is the single byte `0x01`. Opcode `106` returns 420. Shibkane uses this same gate, with the cap in §21.
 
 Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many units this id has minted, and the cap of this id, which is 1.
 
@@ -620,9 +651,9 @@ The picture is opcode `200` on the print's own id. `POST /api/alkanes/simulate` 
 
 Opcode `77` on a print, rather than on the inscribed program, does not birth another id. Shibkane (§21) uses this same birth. A call receipt includes `born` set to the new id.
 
-## 21. Shibkanes *(informative)*
+## 21. Shibkanes
 
-A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. Opcode `77` births a Shibkane the same way it births a Proof, including the collection keys in §20 and the same refusal before execution. A Shibkane collection births 420 prints. One pull per block, and one pull per verified sender. The indexer refuses the birth when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present, with the same receipts as §20. On a successful pull the indexer writes `0x14` and `0x15` as §20 describes. The cap of each print is 1. Opcode `106` returns 420. Opcodes `99`–`102`, `103`–`105`, `200`, `201`, and `202` are the same shape. The document's attributes are `palette`, `pose`, `look`, `mark`, `gear`, `plate`, `ears`, and `caption`. The SVG is a dog. A Shibkane is not a Proof, and the two do not merge.
+A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. It is a print program (§20.1) when the SHA-256 of its wasm equals the Shibkane hash in §24, which is what `GET /api/alkanes/shibkane/build` returns. Opcode `77` births a Shibkane the same way it births a Proof, including the collection keys in §20 and the same refusal before execution. A Shibkane collection births 420 prints. One pull per block, and one pull per verified sender address. The indexer refuses the birth when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present, with the same receipts as §20. On a successful pull the indexer writes `0x14` and `0x15` as §20 describes. The cap of each print is 1. Opcode `106` returns 420. Opcodes `99`–`102`, `103`–`105`, `200`, `201`, and `202` are the same shape. The document's attributes are `palette`, `pose`, `look`, `mark`, `gear`, `plate`, `ears`, and `caption`. The SVG is a dog. A Shibkane is not a Proof, and the two do not merge.
 
 The picture uses integer arithmetic. The program hashes the stored block height, transaction index, time, and sender, and reads that digest. Ears are part of the drawing and of the document, so a client that lists attributes does not drop a difference the picture shows.
 
@@ -674,13 +705,37 @@ The card is not a field of the program and not a call. It lives beside the contr
 
 ---
 
-## 23. Doge Orbital *(informative)*
+## 23. Doge Orbital
 
-Doge Orbital is the site mark, kept as its own canonical bytecode. The indexer labels it `doge` only when the bytecode hash matches `GET /api/alkanes/doge/build`. Opcode `77` births a print the same way it births a Proof, including the collection keys in §20 and the same refusal. A Doge Orbital collection births 420 prints. One pull per block, and one pull per verified sender. The cap of each print is 1. Opcode `106` returns 420. Opcode `200` returns the face. The paths are the mark. The pull chooses a palette, and each coat color is that palette's tint of the original channel. Classic multiplies by 255, so the face is the mark as it ships. The darkest ink stays. Opcode `201` returns the palette. Opcode `202` returns the standards line, the collection, the index, and `palette`. A Doge Orbital is not a Shibkane and not a Proof.
+Doge Orbital is the site mark, kept as its own canonical bytecode. It is a print program (§20.1) when the SHA-256 of its wasm equals the Doge Orbital hash in §24, which is what `GET /api/alkanes/doge/build` returns. The build embeds the site's `doge.svg` with CRLF line ends; the published hash is of that build, whatever line ends a checkout uses. Opcode `77` births a print the same way it births a Proof, including the collection keys in §20 and the same refusal. A Doge Orbital collection births 420 prints. One pull per block, and one pull per verified sender address. The cap of each print is 1. Opcode `106` returns 420. Opcode `200` returns the face. The paths are the mark. The pull chooses a palette, and each coat color is that palette's tint of the original channel. Classic multiplies by 255, so the face is the mark as it ships. The darkest ink stays. Opcode `201` returns the palette. Opcode `202` returns the standards line, the collection, the index, and `palette`. A Doge Orbital is not a Shibkane and not a Proof.
 
 | Byte | Below | Palette |
 | --- | --- | --- |
 | 0 | 70, 120, 170, 210, 240 | Classic, Night, Sakura, Sea, Ember, then Ghost |
+
+## 24. Canonical code hashes
+
+Each row is the SHA-256 of a canonical build's wasm (the deploy payload after the `\0ALK` header, §4.2). The reference recognises these builds by comparing against this table, not by rebuilding, so a compiler update cannot change what it recognises. Its tests rebuild each one and check that the bytes still hash to this table.
+
+Only the print programs change state (§20.1). For every other row the hash only sets a label (`canon` in the API) and has no consensus effect.
+
+| Build | Label | SHA-256 of the wasm | Bytes | On mainnet | Effect |
+| --- | --- | --- | --- | --- | --- |
+| Proof (§20) | `proof` | `7c9b14ca1babaf1ee229f26a49b89e8d54e7ad86af6adc228492e273ec9e1694` | 8,728 | `6475242:19` | Print births (§20.1) |
+| Shibkane (§21) | `shibkane` | `b69f0aa9b8cd66335d1c08fa6c86d3af7d6b0def30c8d8688eff6ebefe9c71a4` | 7,412 | not inscribed | Print births (§20.1) |
+| Doge Orbital (§23) | `doge` | `aeafccfee33779532d930b86bfbd2fbb0e5519db072dc26e29888e3c4040a4c4` | 61,486 | not inscribed | Print births (§20.1) |
+| Howl (§18) | `howl` | `5b9fa2476e0e669aa3126cbdb4c172c29a0685e5bc0e831411e96d7836a5a916` | 2,433 | `6474082:35` | Label |
+| Ash (§18) | `ash` | `0d48882f4c3a5a564e6a0db55d04daa5ef7c60b765e7cbe5965a4324133999f6` | 1,101 | `6474109:50` | Label |
+| Vigil (§18) | `vigil` | `9fa39d1c852c1113f25fbae64cb87ca628f1e151586e3c11db88c51d15548148` | 1,065 | `6474109:48` | Label |
+| Quiet (§18) | `quiet` | `6a0d1a554907a38c1505b25829aeaa6dc600bb69cbf76c793ee1019ca5494f78` | 1,043 | `6474180:51` | Label |
+| Ember (§18) | `ember` | `9f0b242421ddac33991e66e6fca4242b6a356c602d7e61c40baec65b55664194` | 1,012 | `6474188:29` | Label |
+| Kibble (§18) | `kibble` | `ee4c6e7ba6096c1ed5908485135a107f793f8295c2baa0c6e4734a8c9e16a3dd` | 987 | `6474606:65` | Label |
+| Collar (§18), Howl `6474082:35`, Ash `6474109:50`, Vigil `6474109:48` baked in | `collar` | `66c3610d07e8f2fee6db975f52fe41c74bae826847cbc446146ae42334b315c0` | 1,230 | `6474195:85` | Label |
+| Bone (§18), Howl `6474082:35` baked in | `bone` | `cbb467a319b130e53724de61aba4eb32f2d33ebe2d28b4fcf3a182f79f8d808e` | 1,132 | `6474201:39` | Label |
+
+Builds with parameters have no single hash: a fair-launch token (§17), a pool (§19), and a Collar or Bone with other ids baked in. The reference labels those by rebuilding the parameters it reads from the header and comparing hashes. They are labels only. The reference pins its WAT compiler (`wat` 1.255.0) so those rebuilds stay stable.
+
+A change to any build in the first three rows is a new program with a new hash. An indexer MUST NOT treat a superseded or patched Proof, Shibkane or Doge Orbital as a print program unless a later version of this table lists it.
 
 ## Appendix A. Indexer HTTP API *(informative)*
 

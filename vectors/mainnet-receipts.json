@@ -1,8 +1,18 @@
 {
  "protocol": "dalkanes",
  "spec_version": "0.4",
- "source": "mainnet, blocks 6,466,500 to 6,475,327: every call with a receipt, as dogex (/api/alkanes/calls) and an independent indexer (thedoginalsexplorer/indexers, /v1/dalkanes/tx) both record it on 2026-11-27",
- "notes": "ok, fuel_used and return_hex are consensus fields (§9) and the two indexers agree on every one. error is the status the canonical builds use (§13), or the indexer's own landing-check error (§16.3). value is the koinu burned on the carrier; sender_address is the verified sender (§6.5); parcels_out is what a successful call placed on outputs (§16). Covers the first Howl claim (its sender hash contains 0xab, see sender.json), claims with and without a burn (Howl, Ash, Ember; Kibble, Quiet, Vigil), a call that failed the landing check, a repeat claim (status 5), and two blocks with two claims of one build (the first wins, the second answers status 7).",
+ "source": "mainnet, blocks 6,466,500 to 6,475,565. Cases through block 6,475,327: every call with a receipt, as dogex (/api/alkanes/calls) and an independent indexer (thedoginalsexplorer/indexers, /v1/dalkanes/tx) both recorded it on 2026-11-27. Cases from block 6,475,408 on: every later call the independent indexer listed at /v1/dalkanes/activity on 2026-11-27 at 23:12 UTC, with its receipt from /v1/dalkanes/tx. Each of those has a `checked` field saying what else confirmed it. dogex was offline when they were added, so only the four Proof prints were also re-run in the dogex runtime.",
+ "notes": "ok, fuel_used and return_hex are consensus fields (§9) and the two indexers agree on every one. error is the status the canonical builds use (§13), or the indexer's own landing-check error (§16.3). value is the koinu burned on the carrier; sender_address is the verified sender (§6.5); parcels_out is what a successful call placed on outputs (§16). Covers the first Howl claim (its sender hash contains 0xab, see sender.json), claims with and without a burn (Howl, Ash, Ember; Kibble, Quiet, Vigil), a call that failed the landing check, a repeat claim (status 5), and two blocks with two claims of one build (the first wins, the second answers status 7). Later cases add four Proof prints (§20.1: `born` is the pull's own block:tx), two pulls refused before execution because the block already pulled (fuel_used 0), and further Howl, Ash, Quiet, Ember and Kibble claims. Height, transaction index, the sender (input 0's address) and the koinu on the 0xD1 output were checked against Blockchair for every later case.",
+ "proof_program": {
+  "id": "6475242:19",
+  "deploy_txid": "7cc92db17f7b79c82ec36a821b44ea31062158f4eb30e87d3e6bf44035a63997",
+  "height": 6475242,
+  "tx_index": 19,
+  "inscription_id": "3ad5ea82d69b93166495a4ecfa008e8914c30c0bc53900603f798f16ab261f03i0",
+  "code_hash": "7c9b14ca1babaf1ee229f26a49b89e8d54e7ad86af6adc228492e273ec9e1694",
+  "code_len": 8728,
+  "source": "thedoginalsexplorer /v1/dalkanes/contract/6475242:19; block and position checked on Blockchair; code_hash equals the Proof row of spec §24"
+ },
  "cases": [
   {
    "txid": "9d361c832deea6288143af01a49fb463235c6ad9ad77f9ac440ef5c40dda7e96",
@@ -304,6 +314,362 @@
     "error": "status 7"
    },
    "parcels_out": []
+  },
+  {
+   "txid": "8964a83b1cc55391e6e0d4c08b4c8695a49bf593254e50483881369fde864f3f",
+   "height": 6475408,
+   "tx_index": 16,
+   "target": "6474606:65",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DKA2bnNWndorWaHg8TfXUhPM6okgBy3qVe",
+   "expect": {
+    "ok": true,
+    "fuel_used": 15553,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474606:65",
+     "amount": "10000"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; not yet compared with dogex"
+  },
+  {
+   "txid": "7a50504ed88f679f042c51525ff2c9144501d6c3a5e6ff50895f0d745d727ca9",
+   "height": 6475408,
+   "tx_index": 25,
+   "target": "6474188:29",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 2000000,
+   "sender_address": "DKA2bnNWndorWaHg8TfXUhPM6okgBy3qVe",
+   "expect": {
+    "ok": true,
+    "fuel_used": 15637,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474188:29",
+     "amount": "1"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; not yet compared with dogex"
+  },
+  {
+   "txid": "024c1514e950a5ccfb93ba57b5fc99e94c1a5beb6b96a60204946b13ae52273b",
+   "height": 6475408,
+   "tx_index": 26,
+   "target": "6474180:51",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DKA2bnNWndorWaHg8TfXUhPM6okgBy3qVe",
+   "expect": {
+    "ok": true,
+    "fuel_used": 18880,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474180:51",
+     "amount": "16"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; not yet compared with dogex"
+  },
+  {
+   "txid": "83b7954b89aff02b292cf047210eeaa9bd769029a7256c9f721d939b049d6a6a",
+   "height": 6475408,
+   "tx_index": 27,
+   "target": "6474109:50",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 1000000,
+   "sender_address": "DKA2bnNWndorWaHg8TfXUhPM6okgBy3qVe",
+   "expect": {
+    "ok": true,
+    "fuel_used": 16039,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474109:50",
+     "amount": "1"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; not yet compared with dogex"
+  },
+  {
+   "txid": "2cd4dbd1a2c662be3f09f6529bf9d870a3430566eb9f24cff1e822bf242fc8ee",
+   "height": 6475408,
+   "tx_index": 28,
+   "target": "6474082:35",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 16000000,
+   "sender_address": "DKA2bnNWndorWaHg8TfXUhPM6okgBy3qVe",
+   "expect": {
+    "ok": true,
+    "fuel_used": 26599,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474082:35",
+     "amount": "16"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; not yet compared with dogex"
+  },
+  {
+   "txid": "671ef4011fd4c5e1a345860abaed236899543b34fcd076f10a4513b283f59c6e",
+   "height": 6475415,
+   "tx_index": 17,
+   "target": "6474082:35",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 16000000,
+   "sender_address": "DEXKkt6KVzowBHa2TQkkrh1wZ2EJvhwz2V",
+   "expect": {
+    "ok": true,
+    "fuel_used": 26599,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474082:35",
+     "amount": "16"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; not yet compared with dogex"
+  },
+  {
+   "txid": "22d75626ba59d5c6051b0bdce00b28ccee6e4206dfc597f608efe20ed6cf496d",
+   "height": 6475456,
+   "tx_index": 21,
+   "target": "6474606:65",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DKWnKff7cfqhRuwEMpwKuSr2nE5ZdBcD1U",
+   "expect": {
+    "ok": true,
+    "fuel_used": 15553,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474606:65",
+     "amount": "10000"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; not yet compared with dogex"
+  },
+  {
+   "txid": "d59facc66c325b55c898dbc2f996b7bdefa5100f733db37759ed029f8beb209f",
+   "height": 6475472,
+   "tx_index": 30,
+   "target": "6475242:19",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DKWnKff7cfqhRuwEMpwKuSr2nE5ZdBcD1U",
+   "expect": {
+    "ok": true,
+    "fuel_used": 11219,
+    "return_hex": "",
+    "error": null,
+    "born": "6475472:30"
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6475472:30",
+     "amount": "1"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; ok, fuel_used, return_hex and parcels_out re-run in the dogex runtime (dogex test the_mainnet_prints_rerun_to_their_receipts)"
+  },
+  {
+   "txid": "03916f66bc61ffcaefee6232875374277a4f95face95e37d81babb5c022b1e2e",
+   "height": 6475541,
+   "tx_index": 29,
+   "target": "6474180:51",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "D8Hp4nzSMzTXQiQvbJdgmp4v2E8zSiu9ML",
+   "expect": {
+    "ok": true,
+    "fuel_used": 18880,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474180:51",
+     "amount": "16"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; not yet compared with dogex"
+  },
+  {
+   "txid": "3fb38cad2072acf715b0fdaff37fa3d50a884632113d0423f31befddeb04ae20",
+   "height": 6475541,
+   "tx_index": 30,
+   "target": "6475242:19",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DFgGCRVEWQKxk72k6jmvHRMa3Wym1CR79e",
+   "expect": {
+    "ok": true,
+    "fuel_used": 11219,
+    "return_hex": "",
+    "error": null,
+    "born": "6475541:30"
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6475541:30",
+     "amount": "1"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; ok, fuel_used, return_hex and parcels_out re-run in the dogex runtime (dogex test the_mainnet_prints_rerun_to_their_receipts)"
+  },
+  {
+   "txid": "b91620230f28330b49a44c2b545b7a04eda67a1b47034127ef0bded05c558fa1",
+   "height": 6475541,
+   "tx_index": 31,
+   "target": "6475242:19",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DKA2bnNWndorWaHg8TfXUhPM6okgBy3qVe",
+   "expect": {
+    "ok": false,
+    "fuel_used": 0,
+    "return_hex": "",
+    "error": "this block already pulled"
+   },
+   "parcels_out": [],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; refused before execution by §20.1 (an earlier pull in the same block), not re-run"
+  },
+  {
+   "txid": "6541e4e19331169d40f0cfc2c87aa0941166a8c2457e7de055ec7cd1a0a23662",
+   "height": 6475544,
+   "tx_index": 34,
+   "target": "6475242:19",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DCMjKZjzKmrfCs1pS4mvDT2VjKXQXKoQVC",
+   "expect": {
+    "ok": true,
+    "fuel_used": 11219,
+    "return_hex": "",
+    "error": null,
+    "born": "6475544:34"
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6475544:34",
+     "amount": "1"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; ok, fuel_used, return_hex and parcels_out re-run in the dogex runtime (dogex test the_mainnet_prints_rerun_to_their_receipts)"
+  },
+  {
+   "txid": "cfd06c83925866e5db5a7e9527cebe1a4fcc2b94482b227f293950ec71ac4844",
+   "height": 6475565,
+   "tx_index": 27,
+   "target": "6475242:19",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DEXKkt6KVzowBHa2TQkkrh1wZ2EJvhwz2V",
+   "expect": {
+    "ok": true,
+    "fuel_used": 11219,
+    "return_hex": "",
+    "error": null,
+    "born": "6475565:27"
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6475565:27",
+     "amount": "1"
+    }
+   ],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; ok, fuel_used, return_hex and parcels_out re-run in the dogex runtime (dogex test the_mainnet_prints_rerun_to_their_receipts)"
+  },
+  {
+   "txid": "4ceb1058302d4494389966af9059a9daac220b2f552c71aab6b6ad7d46b730ad",
+   "height": 6475565,
+   "tx_index": 31,
+   "target": "6475242:19",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DKA2bnNWndorWaHg8TfXUhPM6okgBy3qVe",
+   "expect": {
+    "ok": false,
+    "fuel_used": 0,
+    "return_hex": "",
+    "error": "this block already pulled"
+   },
+   "parcels_out": [],
+   "checked": "thedoginalsexplorer receipt; chain fields on Blockchair; refused before execution by §20.1 (an earlier pull in the same block), not re-run"
   }
  ]
 }

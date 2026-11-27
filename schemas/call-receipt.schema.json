@@ -25,7 +25,7 @@
     "return_hex": { "type": "string", "pattern": "^([0-9a-f]{2})*$", "maxLength": 32768 },
     "error": { "type": ["string", "null"] },
     "logs": { "type": "array", "items": { "type": "string" } },
-    "born": { "type": "string", "pattern": "^[0-9]+:[0-9]+$", "description": "The print id this call bore (spec section 20). Absent otherwise." },
+    "born": { "type": "string", "pattern": "^[0-9]+:[0-9]+$", "description": "The print id this call bore (spec section 20.1). Absent otherwise." },
     "tx_index": { "type": "integer", "minimum": 0, "description": "Informative." },
     "time": { "type": "integer", "minimum": 0, "description": "Informative. Block header nTime." },
     "version": { "enum": [1, 2], "description": "Informative. 1 = call message, 2 = parcel message with a call." },
