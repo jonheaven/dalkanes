@@ -543,9 +543,11 @@ Howl, Ash, and Vigil are three canonical builds. An indexer labels a deploy only
 
 One claim per block is the monopoly limit that does not charge a second price for showing up. A new wallet is still a new claim. It has to wait for its own block. Howl's burn and Ember's rising burn make a pile of wallets destroy DOGE, and that DOGE is not paid to anyone.
 
-Quiet, Ember, Collar, and Bone are canonical builds beside the Pack. Quiet's opcode `77` mints `min(16, blocks since the previous claim)`, or 1 on the first claim, cap 1,024. Ember's opcode `77` mints one coin whose burn is `(minted + 1) × 0.01` DOGE, cap 256. Collar's opcode `77` takes exactly one Howl, one Ash, and one Vigil, keeps them, and mints one Collar. The three ids are baked into that bytecode. Bone's opcode `78` locks a Howl deposit for 1,440 blocks and opcode `79` returns it and mints one Bone. Howl's id is baked into that bytecode.
+Quiet, Ember, Collar, Bone, and Kibble are canonical builds beside the Pack. Quiet's opcode `77` mints `min(16, blocks since the previous claim)`, or 1 on the first claim, cap 1,024. Ember's opcode `77` mints one coin whose burn is `(minted + 1) × 0.01` DOGE, cap 256. Collar's opcode `77` takes exactly one Howl, one Ash, and one Vigil, keeps them, and mints one Collar. The three ids are baked into that bytecode. Bone's opcode `78` locks a Howl deposit for 1,440 blocks and opcode `79` returns it and mints one Bone. Howl's id is baked into that bytecode.
 
-`GET /api/alkanes/howl/build`, `/ash/build`, `/vigil/build`, `/quiet/build`, and `/ember/build` return those deploy bodies. Collar and Bone take the baked ids as query parameters. `POST /api/alkanes/preview` runs one of those builds before it is inscribed. None of these routes accept bytecode.
+Kibble is the flagship fungible. Bitcoin Alkanes installs DIESEL at reserved id `[2,0]`, and that mint is a race for position in the block. Dogecoin has no reserved id (§14), so Kibble is an ordinary inscription of this build. Opcode `77` mints 10,000 onto the named output, once per verified sender and once per block, until the cap of 432,000,000 (43,200 claims). A missed block stays open for a later claim, so filling the cap takes at least 43,200 blocks and longer when blocks are missed. The call takes no deposit and burns no DOGE. Views `99`–`103` return the name `Kibble`, the symbol `KIBBLE`, minted, the cap, and the mint size.
+
+`GET /api/alkanes/howl/build`, `/ash/build`, `/vigil/build`, `/quiet/build`, `/ember/build`, and `/kibble/build` return those deploy bodies. Collar and Bone take the baked ids as query parameters. `POST /api/alkanes/preview` runs one of those builds before it is inscribed. None of these routes accept bytecode.
 
 ## 19. Pool *(informative)*
 
