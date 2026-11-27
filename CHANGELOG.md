@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- §20: how a client shows a print. The inscription is the program. A holding with `clone_of` set is one collectible, tagged as a Dalkane, and the picture is opcode `200` from `POST /api/alkanes/simulate`, decoded as SVG. The factory stays a token. Appendix A names `clone_of` on `GET /api/alkanes/markets`.
+
 - §18: view opcodes for Howl, Ash, Quiet, Ember, Vigil, Collar, and Bone. Howl's `101` is the treasury left in the contract. `102` is the era, `103` the claim size, `104` the coins this sender has in a den, `105` the unlock height, and `106` is 1 when this sender has claimed.
 - §20: the first print is index 0. A refused pull records `fuel_used` 0 and leaves the block fuel budget unchanged. Key `0x15` followed by the sender stores the single byte `0x01`.
 

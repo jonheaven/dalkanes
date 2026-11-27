@@ -610,6 +610,14 @@ The picture is a sacred-geometry print. It uses integer arithmetic. The program 
 
 A later view reads the stored record. It does not read the clock again.
 
+### Showing a print *(informative)*
+
+A print is not a Doginal. The inscription is the program, and its content is WASM. A client that paints that file paints no picture.
+
+A wallet reads holdings with `POST /api/alkanes/outputs`. `GET /api/alkanes/markets` includes `clone_of`: the inscribed program's id when this id was born by a pull, and empty on the factory. When `clone_of` is set and `kind` is `proof` or `shibkane`, the holding is one collectible. Show it with inscriptions, tagged as a Dalkane so it is not read as a Doginal, and leave the one unit out of the fungible token list. The factory stays with the tokens. Pack tokens use a project card (§22) or a picture the site ships with that build. They do not use opcode `200`.
+
+The picture is opcode `200` on the print's own id. `POST /api/alkanes/simulate` with `inputs: [200]` returns `return_hex`. Decode those bytes as UTF-8. The document is an SVG. A client SHOULD refuse one that contains `script`, `javascript:`, or `foreignObject`. The same call on a receipt's `born` id is the thumbnail for that birth on a chart point and an activity row. Opcode `202` is the text beside the picture, not a second image.
+
 Opcode `77` on a print, rather than on the inscribed program, does not birth another id. Shibkane (§21) uses this same birth. A call receipt includes `born` set to the new id.
 
 ## 21. Shibkanes *(informative)*
@@ -670,7 +678,7 @@ The reference indexer serves these routes. They are not part of consensus:
 | `GET /api/alkanes/output/{txid}/{vout}` | Parcel balances on one output |
 | `POST /api/alkanes/outputs` | Parcel balances on up to 500 outputs in one call (`{"outpoints": ["txid:vout", …]}`); returns only outputs that hold something. A wallet reads its holdings this way. |
 | `GET /api/alkanes/{block}/{tx}/holders` | Addresses holding the token on their outputs, largest first, with holder count, output count and circulating units. A holder is the address an output pays. |
-| `GET /api/alkanes/markets` | Recent deploys with kind, label, recent calls, holder count and circulating units, plus name, symbol, cap and minted for canonical builds (§17–§19). `card` and `deployer` are the project card (§22) |
+| `GET /api/alkanes/markets` | Recent deploys with kind, label, recent calls, holder count and circulating units, plus name, symbol, cap and minted for canonical builds (§17–§19). `card` and `deployer` are the project card (§22). `clone_of` is the inscribed program when this id is a print, and empty on the factory (§20) |
 | `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides. Credits `incoming` to the contract's sheet first, as a real deposit would. Rejects malformed cells rather than dropping them. Returns per-contract `contract_writes` and the `outgoing` parcels a real call would place. |
 | `GET /api/alkanes/pool/build?leg0=&leg1=` | Canonical pool deploy body for a pair (§19) |
 | `GET /api/alkanes/proof/build` | Canonical Proof deploy body (§20) |
