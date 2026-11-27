@@ -735,7 +735,17 @@ Only the print programs change state (§20.1). For every other row the hash only
 
 Builds with parameters have no single hash: a fair-launch token (§17), a pool (§19), and a Collar or Bone with other ids baked in. The reference labels those by rebuilding the parameters it reads from the header and comparing hashes. They are labels only. The reference pins its WAT compiler (`wat` 1.255.0) so those rebuilds stay stable.
 
-A change to any build in the first three rows is a new program with a new hash. An indexer MUST NOT treat a superseded or patched Proof, Shibkane or Doge Orbital as a print program unless a later version of this table lists it.
+A change to any build in the first three rows is a new program with a new hash. An indexer MUST NOT treat a superseded or patched Proof, Shibkane or Doge Orbital as a print program unless a later version of this table lists it. The same wasm then gets no `proof`, `shibkane` or `doge` label, and §20.1 does not apply: no cap, no one-per-block refusal, and no one-per-address refusal.
+
+The live Proof `6475242:19` is the Proof row. These hashes are not in the table. An indexer that gates them refuses a pull the reference accepts:
+
+| Prefix | What it is |
+| --- | --- |
+| `43a9ebb3` | An earlier Proof body |
+| `3cba3028` | A Shibkane body from 2026-11-26 |
+| `9e9bfc04` | A Shibkane body from 2026-11-26 |
+
+`7c9b14ca` is the current Proof row, not an earlier one. The Shibkane row is the capped build (opcode `106` returns 420). The Doge Orbital row is the build that embeds `doge.svg` with CRLF line ends. [vectors/canonical-builds.json](vectors/canonical-builds.json) is this table. The build routes in Appendix A return the same bytes. dogex and doginals.lol are not the public copy of these hashes.
 
 ## Appendix A. Indexer HTTP API *(informative)*
 
@@ -756,7 +766,7 @@ The reference indexer serves these routes. They are not part of consensus:
 | `POST /api/alkanes/outputs` | Parcel balances on up to 500 outputs in one call (`{"outpoints": ["txid:vout", …]}`); returns only outputs that hold something. A wallet reads its holdings this way. |
 | `GET /api/alkanes/{block}/{tx}/holders` | Addresses holding the token on their outputs, largest first, with holder count, output count and circulating units. A holder is the address an output pays. |
 | `GET /api/alkanes/markets` | Recent deploys with kind, label, recent calls, holder count and circulating units, plus name, symbol, cap and minted for canonical builds (§17–§19). `card` and `deployer` are the project card (§22). `clone_of` is the inscribed program when this id is a print, and empty on the factory (§20) |
-| `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides. Credits `incoming` to the contract's sheet first, as a real deposit would. Rejects malformed cells rather than dropping them. Returns per-contract `contract_writes` and the `outgoing` parcels a real call would place. |
+| `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides. Credits `incoming` to the contract's sheet first, as a real deposit would. Rejects malformed cells rather than dropping them. Returns per-contract `contract_writes` and the `outgoing` parcels a real call would place. A pull (§20.1) is specified in the paragraph after this table. |
 | `GET /api/alkanes/pool/build?leg0=&leg1=` | Canonical pool deploy body for a pair (§19) |
 | `GET /api/alkanes/proof/build` | Canonical Proof deploy body (§20) |
 | `GET /api/alkanes/shibkane/build` | Canonical Shibkane deploy body (§21) |
@@ -764,6 +774,8 @@ The reference indexer serves these routes. They are not part of consensus:
 | `POST /api/alkanes/build-call` | Builds a form-A `OP_RETURN` script |
 | `GET /api/alkanes/templates[/{name}]` | Reference contract templates |
 | `POST /api/alkanes/launch/build` | Canonical fair-launch deploy body from name, symbol, cap, and mint size |
+
+A dry run of a pull applies the same pre-run refusals as a block (§20.1), then runs the program as the new id with the program as its caller and the print's storage empty. The response includes `born`. When the request does not set a height, `born` uses one past the last indexed height and transaction index 1. That id is a placeholder. The mined pull's id is its own `block:tx`. A dry run that answers `ok` for a block or an address the gate would refuse is wrong, and a wallet must not sign from it. A refused dry run has `ok: false`, `fuel_used` 0, and no `born`. This is not consensus. A block still applies §20.1 on its own.
 
 ## Appendix B. Worked example
 

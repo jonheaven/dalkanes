@@ -1,0 +1,123 @@
+{
+  "spec_section": "24",
+  "spec_version": "0.4.2",
+  "hash_of": "The wasm bytes after the deploy header 00 41 4c 4b 01. SHA-256, lowercase hex.",
+  "source": "spec.md §24, pinned in dogex by comparing to these constants (dogex 571f296). Not rebuilt for this file.",
+  "builds": [
+    {
+      "build": "Proof",
+      "section": "20",
+      "label": "proof",
+      "sha256": "7c9b14ca1babaf1ee229f26a49b89e8d54e7ad86af6adc228492e273ec9e1694",
+      "bytes": 8728,
+      "mainnet": "6475242:19",
+      "print_program": true
+    },
+    {
+      "build": "Shibkane",
+      "section": "21",
+      "label": "shibkane",
+      "sha256": "b69f0aa9b8cd66335d1c08fa6c86d3af7d6b0def30c8d8688eff6ebefe9c71a4",
+      "bytes": 7412,
+      "mainnet": null,
+      "print_program": true
+    },
+    {
+      "build": "Doge Orbital",
+      "section": "23",
+      "label": "doge",
+      "sha256": "aeafccfee33779532d930b86bfbd2fbb0e5519db072dc26e29888e3c4040a4c4",
+      "bytes": 61486,
+      "mainnet": null,
+      "print_program": true
+    },
+    {
+      "build": "Howl",
+      "section": "18",
+      "label": "howl",
+      "sha256": "5b9fa2476e0e669aa3126cbdb4c172c29a0685e5bc0e831411e96d7836a5a916",
+      "bytes": 2433,
+      "mainnet": "6474082:35",
+      "print_program": false
+    },
+    {
+      "build": "Ash",
+      "section": "18",
+      "label": "ash",
+      "sha256": "0d48882f4c3a5a564e6a0db55d04daa5ef7c60b765e7cbe5965a4324133999f6",
+      "bytes": 1101,
+      "mainnet": "6474109:50",
+      "print_program": false
+    },
+    {
+      "build": "Vigil",
+      "section": "18",
+      "label": "vigil",
+      "sha256": "9fa39d1c852c1113f25fbae64cb87ca628f1e151586e3c11db88c51d15548148",
+      "bytes": 1065,
+      "mainnet": "6474109:48",
+      "print_program": false
+    },
+    {
+      "build": "Quiet",
+      "section": "18",
+      "label": "quiet",
+      "sha256": "6a0d1a554907a38c1505b25829aeaa6dc600bb69cbf76c793ee1019ca5494f78",
+      "bytes": 1043,
+      "mainnet": "6474180:51",
+      "print_program": false
+    },
+    {
+      "build": "Ember",
+      "section": "18",
+      "label": "ember",
+      "sha256": "9f0b242421ddac33991e66e6fca4242b6a356c602d7e61c40baec65b55664194",
+      "bytes": 1012,
+      "mainnet": "6474188:29",
+      "print_program": false
+    },
+    {
+      "build": "Kibble",
+      "section": "18",
+      "label": "kibble",
+      "sha256": "ee4c6e7ba6096c1ed5908485135a107f793f8295c2baa0c6e4734a8c9e16a3dd",
+      "bytes": 987,
+      "mainnet": "6474606:65",
+      "print_program": false
+    },
+    {
+      "build": "Collar",
+      "section": "18",
+      "label": "collar",
+      "sha256": "66c3610d07e8f2fee6db975f52fe41c74bae826847cbc446146ae42334b315c0",
+      "bytes": 1230,
+      "mainnet": "6474195:85",
+      "baked": "Howl 6474082:35, Ash 6474109:50, Vigil 6474109:48",
+      "print_program": false
+    },
+    {
+      "build": "Bone",
+      "section": "18",
+      "label": "bone",
+      "sha256": "cbb467a319b130e53724de61aba4eb32f2d33ebe2d28b4fcf3a182f79f8d808e",
+      "bytes": 1132,
+      "mainnet": "6474201:39",
+      "baked": "Howl 6474082:35",
+      "print_program": false
+    }
+  ],
+  "not_print_programs": [
+    {
+      "prefix": "43a9ebb3",
+      "note": "An earlier Proof body. No proof label and no §20.1 gate."
+    },
+    {
+      "prefix": "3cba3028",
+      "note": "A Shibkane body from 2026-11-26. No shibkane label and no §20.1 gate."
+    },
+    {
+      "prefix": "9e9bfc04",
+      "note": "A Shibkane body from 2026-11-26. No shibkane label and no §20.1 gate."
+    }
+  ]
+}

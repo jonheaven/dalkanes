@@ -11,6 +11,7 @@ Every vector here comes from the reference indexer's unit tests, or from the vec
 | [parcel.json](parcel.json) | One message per transaction (§5.1: none, call, parcel, ambiguous), version `0x02` push forms and field limits (§16.1), routing (§16.2: clamping, skipped edicts, no split, pointer as deposit), canonical parcel scripts |
 | [mainnet-receipts.json](mainnet-receipts.json) | Every mainnet call with a receipt through block 6,475,565: ok, fuel used, return data, the status of failures, burns, senders and the parcels placed. Through block 6,475,327 both independent indexers (dogex and thedoginalsexplorer/indexers) record each one. Later cases, including the Proof program's deploy, the four Proof prints (§20.1) and two refused pulls, each say how they were checked |
 | [sender.json](sender.json) | Verified sender (§6.5) from a real mainnet transaction whose pubkey hash contains `0xab` |
+| [canonical-builds.json](canonical-builds.json) | The §24 table as JSON: label, SHA-256 of the wasm, length, and mainnet id. Not an execution vector |
 
 The schema is in [../schemas/vectors.schema.json](../schemas/vectors.schema.json).
 

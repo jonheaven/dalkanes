@@ -15,3 +15,13 @@ Status of the Ðalkanes support on [doginals.store](https://doginals.store/inscr
 Our dry run used to execute opcode 77 as a plain call on the program, without the birth or the pre-run gate. So it answered `ok` for an address that had already pulled, and a wallet would have signed a claim that the block refuses (and paid its fees). The fix is in the commits above.
 
 **Suggestion:** Appendix A could say that `POST /api/alkanes/simulate` applies the same pre-run refusals as a block (the §20 gate) and runs a pull as a birth. It could also say that the response carries the would-be `born`. This doesn't affect consensus, but every wallet depends on it.
+
+## Answers (spec 0.4.2)
+
+The notes above were written against `9dcd781`. `444af0d` (0.4.1) already published §24. This section is the reply. Keep the dry run you described. It matches Appendix A as of 0.4.2.
+
+1. **Shibkane fingerprint.** SHA-256 of the wasm is `b69f0aa9b8cd66335d1c08fa6c86d3af7d6b0def30c8d8688eff6ebefe9c71a4`, 7,412 bytes (§24, and [vectors/canonical-builds.json](../vectors/canonical-builds.json)). That is the capped build: opcode `106` returns 420, and the document names ears. dogex `3c416b4` is that wasm. The later pin (`571f296`) only stores the hash; it does not change the module.
+2. **Doge Orbital fingerprint.** SHA-256 of the wasm is `aeafccfee33779532d930b86bfbd2fbb0e5519db072dc26e29888e3c4040a4c4`, 61,486 bytes. Nothing with this hash is inscribed. The hash is of the build that embeds `doge.svg` with CRLF line ends.
+3. **Older bodies.** dogex labels and gates only the §24 row. `7c9b14ca…` is the current Proof, live at `6475242:19`, and the gate applies. `43a9ebb3…`, `3cba3028…` and `9e9bfc04…` are not in the table. They get no `proof` or `shibkane` label and no §20.1 gate. Gating them diverges from dogex: a pull the reference would run, you would refuse.
+4. **Where the hashes live.** This repo is the public copy. dogex and doginals.lol stay private. Read §24 or `vectors/canonical-builds.json`. Do not wait on `GET /api/alkanes/*/build`.
+5. **dogex.command.dog** was still HTTP 502 at 23:40 UTC on 2026-11-27, including the build routes. The hashes above do not depend on it. dogex `POST /api/alkanes/simulate` as of `571f296` still runs opcode 77 on the target in place, with the caller `0:0`, and the response has no `born`. Your dry run is the one Appendix A now describes. Do not copy that dogex route until it returns `born`.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2 (2026-11-27)
+
+Answers for doginals.store / thedoginalsexplorer after their notes in pull request 3. No birth rule changes. An indexer that already follows §24 does not reindex.
+
+- §24 names three wasm hashes that are not print programs (`43a9ebb3`, `3cba3028`, `9e9bfc04`) and says the live Proof `6475242:19` is the current Proof row `7c9b14ca`. [vectors/canonical-builds.json](vectors/canonical-builds.json) is the §24 table.
+- Appendix A: a dry run of a pull applies the §20.1 refusals, runs the birth, and returns `born`. A wallet must not sign a dry run the gate would refuse.
+
 ## 0.4.1 (2026-11-27)
 
 This pass pins and documents what the reference already does. It changes no rule, no receipt and no stored key, so no indexer needs to reindex.
