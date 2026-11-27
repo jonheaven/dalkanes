@@ -391,6 +391,8 @@ These come from the ALKANES standard contracts. They make explorers and wallets 
 | `102`–`104` | cap / minted / value per mint (free-mint views) |
 | `1000` | data / attributes. On Bitcoin this returns the bytes stored at initialize. A contract already inscribed on Dogecoin names its picture with a project card (§22) |
 
+Fair launch (§17) and Kibble follow that numbering. Howl, Ash, Quiet, Ember, Vigil, Collar, and Bone list theirs in §18.
+
 The `__dalk_execute` status codes other than `0` are contract-defined. A receipt records a non-zero status as `error: "status N"`. The canonical builds (§17–§21) use these:
 
 | Status | Fair launch (§17) | Pack and beside it (§18) | Pool (§19) | Proof, Shibkane (§20, §21) |
@@ -547,6 +549,8 @@ Quiet, Ember, Collar, Bone, and Kibble are canonical builds beside the Pack. Qui
 
 Kibble is the flagship fungible. Bitcoin Alkanes installs DIESEL at reserved id `[2,0]`, and that mint is a race for position in the block. Dogecoin has no reserved id (§14), so Kibble is an ordinary inscription of this build. Opcode `77` mints 10,000 onto the named output, once per verified sender and once per block, until the cap of 432,000,000 (43,200 claims). A missed block stays open for a later claim, so filling the cap takes at least 43,200 blocks and longer when blocks are missed. The call takes no deposit and burns no DOGE. Views `99`–`103` return the name `Kibble`, the symbol `KIBBLE`, minted, the cap, and the mint size.
 
+Opcode `99` is the name and `100` is the symbol on every build in this section. Howl's `101` is the treasury still in the contract: 0 until the first claim mints 2,048 onto the contract, then what remains. `102` is the era since that claim, 0 before it and through the first 1,440 blocks. `103` is the claim size for that era: 16, then 8, 4, 2, then 1. `104` is the coins this sender has in a den, and `105` is the block height when that den unlocks. Both are 0 when there is no verified sender, or nothing is locked. `106` is 1 when this sender has already claimed, and 0 otherwise. Ash's `101`–`103` are minted, the cap 1,000, and 1,000,000 koinu per coin. Quiet's `101`–`102` are minted and the cap 1,024. Ember's `101`–`103` are minted, the cap 256, and the koinu the next mint burns, `(minted + 1) × 1,000,000`. Vigil's `101`–`103` are minted, the cap 1,440, and 1 while the claim window is open. Collar's `101` and Bone's `101` are minted.
+
 `GET /api/alkanes/howl/build`, `/ash/build`, `/vigil/build`, `/quiet/build`, `/ember/build`, and `/kibble/build` return those deploy bodies. Collar and Bone take the baked ids as query parameters. `POST /api/alkanes/preview` runs one of those builds before it is inscribed. None of these routes accept bytecode.
 
 ## 19. Pool *(informative)*
@@ -579,7 +583,7 @@ Opcode `77` on that program, with an output index, births a print. The print's i
 
 The pull requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of the print onto that output. The program is not inscribed again.
 
-A Proof collection births 420 prints. One pull per block, and one pull per verified sender. The indexer refuses the birth before execution when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present. The receipt is `ok: false`, with `the collection is full`, `this block already pulled`, or `this address already pulled`, and no new id. A refused pull does not consume the block or the address. On a successful pull the indexer writes `0x14` as the height, u64 little-endian, and `0x15` plus the sender. Opcode `106` returns 420. Shibkane uses the same birth and does not use this gate.
+A Proof collection births 420 prints. One pull per block, and one pull per verified sender. The indexer refuses the birth before execution when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present. The receipt is `ok: false` and `fuel_used` is 0, with `the collection is full`, `this block already pulled`, or `this address already pulled`, and no new id. The block fuel budget is unchanged. A refused pull does not consume the block or the address. On a successful pull the indexer writes `0x14` as the height, u64 little-endian, and key `0x15` followed by the 20-byte sender, whose value is the single byte `0x01`. Opcode `106` returns 420. Shibkane uses the same birth and does not use this gate.
 
 Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many units this id has minted, and the cap of this id, which is 1.
 
@@ -587,7 +591,7 @@ Bitcoin's Orbital draft (not Alkanes core) puts membership on the parent. Opcode
 
 The birth runs the program as the new id with the program as its caller (§6.5), which is how the program learns its parent.
 
-On the parent, key `0x10` is the count as a little-endian u64. Key `0x11` followed by the index as a little-endian u32 holds the child id: block then tx, each a little-endian u64. On the print, key `0x12` is the parent id in that same sixteen bytes, written by the program from the caller, and key `0x13` is this print's index as a little-endian u64. The indexer writes `0x10`, the slot, and `0x13` when the pull succeeds. A second indexer that runs the program and skips those three keys will not see the collection.
+On the parent, key `0x10` is the count as a little-endian u64. The first print is index 0. Key `0x11` followed by the index as a little-endian u32 holds the child id: block then tx, each a little-endian u64. On the print, key `0x12` is the parent id in that same sixteen bytes, written by the program from the caller, and key `0x13` is this print's index as a little-endian u64. The indexer writes `0x10`, the slot, and `0x13` when the pull succeeds. A second indexer that runs the program and skips those three keys will not see the collection.
 
 Opcode `103` returns the count, or 0 when `0x10` is absent. Opcode `104` takes an index and returns that sixteen-byte id, or status 6 when the slot is empty. Opcode `105` returns the bytes `dalkane-orbital/1`. Opcode `202` returns one text document. A pulled print includes the standards line, `collection <block>:<tx>`, `index <n>`, then `palette`, `form`, `cut` when the form is a flower or a lattice, `plate`, `caption`, and the stored block, transaction index, and time. An unpulled sheet returns the standards line and says it is unpulled. `GET /api/alkanes/{block}/{tx}` includes `orbital` for these two programs: the standards tag, the count and the first 48 prints on a parent, and the parent id and index on a print. Opcode `104` is how a reader past 48 asks for the rest.
 

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- §18: view opcodes for Howl, Ash, Quiet, Ember, Vigil, Collar, and Bone. Howl's `101` is the treasury left in the contract. `102` is the era, `103` the claim size, `104` the coins this sender has in a den, `105` the unlock height, and `106` is 1 when this sender has claimed.
+- §20: the first print is index 0. A refused pull records `fuel_used` 0 and leaves the block fuel budget unchanged. Key `0x15` followed by the sender stores the single byte `0x01`.
+
 - §6.5: a call that births a print (§20) runs with the program as its caller, not `0:0`; §20 says so where the print's parent key is described. The canonical Proof and Shibkane builds already read it.
 
 - `vectors/mainnet-receipts.json`: the 13 mainnet calls with a receipt through block 6,475,327, on which dogex and an independent indexer agree (ok, fuel_used, return_hex).
