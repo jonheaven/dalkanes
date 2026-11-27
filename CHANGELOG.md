@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- §23: Doge Orbital. One inscribed copy of the site mark. Opcode `77` births a print until 420, with Proof's refusal. Opcode `200` returns that face. Classic is untinted. Night, Sakura, Sea, Ember, and Ghost multiply the coat channels. `POST /api/alkanes/preview` accepts `kind: doge`. Nothing here is inscribed by this change.
+
 - §21: a Shibkane collection stops at 420. One pull per block, one pull per verified sender. Opcode `106` returns 420. The indexer uses the same refusal as Proof. The document names `ears` (Point, Tall, Wide, Flop) from the low two bits of hash byte 8, which the picture already drew. Nothing here is inscribed by this change. `POST /api/alkanes/preview` accepts `kind: shibkane`.
 
 - §20: how a client shows a print. The inscription is the program. A holding with `clone_of` set is one collectible, tagged as a Dalkane, and the picture is opcode `200` from `POST /api/alkanes/simulate`, decoded as SVG. The factory stays a token. Appendix A names `clone_of` on `GET /api/alkanes/markets`.

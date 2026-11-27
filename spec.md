@@ -614,7 +614,7 @@ A later view reads the stored record. It does not read the clock again.
 
 A print is not a Doginal. The inscription is the program, and its content is WASM. A client that paints that file paints no picture.
 
-A wallet reads holdings with `POST /api/alkanes/outputs`. `GET /api/alkanes/markets` includes `clone_of`: the inscribed program's id when this id was born by a pull, and empty on the factory. When `clone_of` is set and `kind` is `proof` or `shibkane`, the holding is one collectible. Show it with inscriptions, tagged as a Dalkane so it is not read as a Doginal, and leave the one unit out of the fungible token list. The factory stays with the tokens. Pack tokens use a project card (§22) or a picture the site ships with that build. They do not use opcode `200`.
+A wallet reads holdings with `POST /api/alkanes/outputs`. `GET /api/alkanes/markets` includes `clone_of`: the inscribed program's id when this id was born by a pull, and empty on the factory. When `clone_of` is set and `kind` is `proof`, `shibkane`, or `doge`, the holding is one collectible. Show it with inscriptions, tagged as a Dalkane so it is not read as a Doginal, and leave the one unit out of the fungible token list. The factory stays with the tokens. Pack tokens use a project card (§22) or a picture the site ships with that build. They do not use opcode `200`.
 
 The picture is opcode `200` on the print's own id. `POST /api/alkanes/simulate` with `inputs: [200]` returns `return_hex`. Decode those bytes as UTF-8. The document is an SVG. A client SHOULD refuse one that contains `script`, `javascript:`, or `foreignObject`. The same call on a receipt's `born` id is the thumbnail for that birth on a chart point and an activity row. Opcode `202` is the text beside the picture, not a second image.
 
@@ -674,6 +674,14 @@ The card is not a field of the program and not a call. It lives beside the contr
 
 ---
 
+## 23. Doge Orbital *(informative)*
+
+Doge Orbital is the site mark, kept as its own canonical bytecode. The indexer labels it `doge` only when the bytecode hash matches `GET /api/alkanes/doge/build`. Opcode `77` births a print the same way it births a Proof, including the collection keys in §20 and the same refusal. A Doge Orbital collection births 420 prints. One pull per block, and one pull per verified sender. The cap of each print is 1. Opcode `106` returns 420. Opcode `200` returns the face. The paths are the mark. The pull chooses a palette, and each coat color is that palette's tint of the original channel. Classic multiplies by 255, so the face is the mark as it ships. The darkest ink stays. Opcode `201` returns the palette. Opcode `202` returns the standards line, the collection, the index, and `palette`. A Doge Orbital is not a Shibkane and not a Proof.
+
+| Byte | Below | Palette |
+| --- | --- | --- |
+| 0 | 70, 120, 170, 210, 240 | Classic, Night, Sakura, Sea, Ember, then Ghost |
+
 ## Appendix A. Indexer HTTP API *(informative)*
 
 The reference indexer serves these routes. They are not part of consensus:
@@ -697,6 +705,7 @@ The reference indexer serves these routes. They are not part of consensus:
 | `GET /api/alkanes/pool/build?leg0=&leg1=` | Canonical pool deploy body for a pair (§19) |
 | `GET /api/alkanes/proof/build` | Canonical Proof deploy body (§20) |
 | `GET /api/alkanes/shibkane/build` | Canonical Shibkane deploy body (§21) |
+| `GET /api/alkanes/doge/build` | Canonical Doge Orbital deploy body (§23) |
 | `POST /api/alkanes/build-call` | Builds a form-A `OP_RETURN` script |
 | `GET /api/alkanes/templates[/{name}]` | Reference contract templates |
 | `POST /api/alkanes/launch/build` | Canonical fair-launch deploy body from name, symbol, cap, and mint size |
