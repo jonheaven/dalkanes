@@ -575,9 +575,11 @@ The reserves are the contract's ledger. No key can spend them. The pointer on th
 
 One inscription of the canonical bytecode is the program. The indexer labels that deploy `proof` only when the bytecode hash matches `GET /api/alkanes/proof/build`. A patched copy is a different program. The route does not accept bytecode.
 
-Opcode `77` on that program, with an output index, births a print. The print's id is the pull transaction's own `block:tx`. The indexer runs the inscribed program as that id: the pull's storage and the one minted parcel belong to the print, and a second `77` on the same print fails. A later `77` on the program births another print. Two prints do not add. A transaction that deploys a contract cannot also be a print, because one transaction has one id.
+Opcode `77` on that program, with an output index, births a print. The print's id is the pull transaction's own `block:tx`. The indexer runs the inscribed program as that id: the pull's storage and the one minted parcel belong to the print, and a second `77` on the same print fails. A later `77` on the program births another print, until the collection gate below. Two prints do not add. A transaction that deploys a contract cannot also be a print, because one transaction has one id.
 
 The pull requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of the print onto that output. The program is not inscribed again.
+
+A Proof collection births 420 prints. One pull per block, and one pull per verified sender. The indexer refuses the birth before execution when key `0x10` is already 420, when key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present. The receipt is `ok: false`, with `the collection is full`, `this block already pulled`, or `this address already pulled`, and no new id. A refused pull does not consume the block or the address. On a successful pull the indexer writes `0x14` as the height, u64 little-endian, and `0x15` plus the sender. Opcode `106` returns 420. Shibkane uses the same birth and does not use this gate.
 
 Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many units this id has minted, and the cap of this id, which is 1.
 
@@ -606,7 +608,7 @@ Opcode `77` on a print, rather than on the inscribed program, does not birth ano
 
 ## 21. Shibkanes *(informative)*
 
-A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. Opcode `77` births a Shibkane the same way it births a Proof, including the collection keys in §20. The cap of each print is 1. Opcodes `99`–`102`, `103`–`105`, `200`, `201`, and `202` are the same shape. The document's attributes are `palette`, `pose`, `look`, `mark`, `gear`, `plate`, and `caption`. The SVG is a dog. Pose, face, mark, gear, and plate come from later bytes of the same pull hash. A Shibkane is not a Proof, and the two do not merge.
+A Shibkane is the dog drawing that was the first Proof picture, kept as its own canonical bytecode. The indexer labels it `shibkane` only when the bytecode hash matches `GET /api/alkanes/shibkane/build`. Opcode `77` births a Shibkane the same way it births a Proof, including the collection keys in §20, without Proof's cap of 420 or its one-pull gate. The cap of each print is 1. Opcodes `99`–`102`, `103`–`105`, `200`, `201`, and `202` are the same shape. The document's attributes are `palette`, `pose`, `look`, `mark`, `gear`, `plate`, and `caption`. The SVG is a dog. Pose, face, mark, gear, and plate come from later bytes of the same pull hash. A Shibkane is not a Proof, and the two do not merge.
 
 ## 22. Project card
 

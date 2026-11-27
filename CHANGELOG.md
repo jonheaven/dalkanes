@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- §20: a Proof collection stops at 420. One pull per block, one pull per verified sender. Opcode `106` returns 420. The indexer refuses a birth past the cap, in a block that already pulled, or from an address that already pulled. Shibkane is unchanged. Nothing here is inscribed by this change.
+
 - §18: Kibble, a canonical build beside the Pack. Opcode `77` mints 10,000, once per verified sender and once per block, cap 432,000,000. A missed block stays open. No deposit, no burn, no reserved id. `GET /api/alkanes/kibble/build` returns that bytecode and does not accept a replacement. Nothing here is inscribed by this change.
 
 - §20 and §21: a Proof or Shibkane collection records each print. Opcode `103` is the count, `104` is the print at an index, `105` is the tag `dalkane-orbital/1`, and `202` is one metadata document. Opcode `200` stays the SVG. The parent cannot be written by the program while it runs as the new id, so the birth writes the count, the slot, and the child's index. No template id, and nothing is inscribed by this change.
