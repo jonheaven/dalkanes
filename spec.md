@@ -204,7 +204,7 @@ These make the call fail even if `__dalk_execute` later returns `0`:
 | `alkane_tx` | Index of the call transaction |
 | `alkane_time` | Block header `nTime` (unix seconds) |
 | `alkane_myself_*` | Target AlkaneId |
-| `alkane_caller_*` | `0:0` |
+| `alkane_caller_*` | `0:0`, except a call that births a print (§20): the program it is born from |
 | `alkane_value` | Koinu value of the carrier output, see below |
 | `alkane_sender` | Verified sender, see below |
 | `incoming_*` | Empty list |
@@ -584,6 +584,8 @@ A Proof collection births 420 prints. One pull per block, and one pull per verif
 Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many units this id has minted, and the cap of this id, which is 1.
 
 Bitcoin's Orbital draft (not Alkanes core) puts membership on the parent. Opcode `77` there calls a template id and the parent records the new supply-1 child. The child returns one metadata document, and each attribute has a stable id beside its label. The specified picture is data the contract draws. Dogecoin has no template id and no witness, so the inscribed program is the template and the picture stays opcode `200`. The birth also records the print, because the program runs as the new id and cannot write the parent's storage.
+
+The birth runs the program as the new id with the program as its caller (§6.5), which is how the program learns its parent.
 
 On the parent, key `0x10` is the count as a little-endian u64. Key `0x11` followed by the index as a little-endian u32 holds the child id: block then tx, each a little-endian u64. On the print, key `0x12` is the parent id in that same sixteen bytes, written by the program from the caller, and key `0x13` is this print's index as a little-endian u64. The indexer writes `0x10`, the slot, and `0x13` when the pull succeeds. A second indexer that runs the program and skips those three keys will not see the collection.
 

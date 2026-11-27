@@ -1,0 +1,309 @@
+{
+ "protocol": "dalkanes",
+ "spec_version": "0.4",
+ "source": "mainnet, blocks 6,466,500 to 6,475,327: every call with a receipt, as dogex (/api/alkanes/calls) and an independent indexer (thedoginalsexplorer/indexers, /v1/dalkanes/tx) both record it on 2026-11-27",
+ "notes": "ok, fuel_used and return_hex are consensus fields (§9) and the two indexers agree on every one. error is the status the canonical builds use (§13), or the indexer's own landing-check error (§16.3). value is the koinu burned on the carrier; sender_address is the verified sender (§6.5); parcels_out is what a successful call placed on outputs (§16). Covers the first Howl claim (its sender hash contains 0xab, see sender.json), claims with and without a burn (Howl, Ash, Ember; Kibble, Quiet, Vigil), a call that failed the landing check, a repeat claim (status 5), and two blocks with two claims of one build (the first wins, the second answers status 7).",
+ "cases": [
+  {
+   "txid": "9d361c832deea6288143af01a49fb463235c6ad9ad77f9ac440ef5c40dda7e96",
+   "height": 6474090,
+   "tx_index": 15,
+   "target": "6474082:35",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 16000000,
+   "sender_address": "DKWnKff7cfqhRuwEMpwKuSr2nE5ZdBcD1U",
+   "expect": {
+    "ok": true,
+    "fuel_used": 31921,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474082:35",
+     "amount": "16"
+    }
+   ]
+  },
+  {
+   "txid": "84c004ff29c32a317f38c26c3b0f4d2d35d22618a19ffae9f66cd267f0662ac3",
+   "height": 6475284,
+   "tx_index": 18,
+   "target": "6474606:65",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DFgGCRVEWQKxk72k6jmvHRMa3Wym1CR79e",
+   "expect": {
+    "ok": true,
+    "fuel_used": 14545,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474606:65",
+     "amount": "10000"
+    }
+   ]
+  },
+  {
+   "txid": "d5e1bf32358371c5a8f775232cdb9b57f5d4681f3442247d9654cd8eda79b9d7",
+   "height": 6475284,
+   "tx_index": 19,
+   "target": "6474109:50",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 1000000,
+   "sender_address": "DFgGCRVEWQKxk72k6jmvHRMa3Wym1CR79e",
+   "expect": {
+    "ok": true,
+    "fuel_used": 14793,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474109:50",
+     "amount": "1"
+    }
+   ]
+  },
+  {
+   "txid": "55d84ef1ee73d65958c690ba3c0f89448fb590129700366bebbdab82036949b3",
+   "height": 6475305,
+   "tx_index": 23,
+   "target": "6474606:65",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DKWnKff7cfqhRuwEMpwKuSr2nE5ZdBcD1U",
+   "expect": {
+    "ok": false,
+    "fuel_used": 15553,
+    "return_hex": "",
+    "error": "parcel sent to a missing or OP_RETURN output"
+   },
+   "parcels_out": []
+  },
+  {
+   "txid": "7a17f268a580b302fae27c2ae41de8860dba2659587e8d33b746488dc63e9384",
+   "height": 6475305,
+   "tx_index": 24,
+   "target": "6474109:50",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 1000000,
+   "sender_address": "DKWnKff7cfqhRuwEMpwKuSr2nE5ZdBcD1U",
+   "expect": {
+    "ok": true,
+    "fuel_used": 16039,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474109:50",
+     "amount": "1"
+    }
+   ]
+  },
+  {
+   "txid": "f9e2cbb7ccbcd0bdd7228bfeabef85b091fdb3d5e87023d774ea4c3edbeebb70",
+   "height": 6475305,
+   "tx_index": 27,
+   "target": "6474082:35",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 16000000,
+   "sender_address": "DKWnKff7cfqhRuwEMpwKuSr2nE5ZdBcD1U",
+   "expect": {
+    "ok": false,
+    "fuel_used": 9755,
+    "return_hex": "",
+    "error": "status 5"
+   },
+   "parcels_out": []
+  },
+  {
+   "txid": "06c7a1abf2bcff7a3ba11bad4f8da54a2d020df359a388e3261d948cd108422d",
+   "height": 6475313,
+   "tx_index": 49,
+   "target": "6474082:35",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 16000000,
+   "sender_address": "DFgGCRVEWQKxk72k6jmvHRMa3Wym1CR79e",
+   "expect": {
+    "ok": true,
+    "fuel_used": 26599,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474082:35",
+     "amount": "16"
+    }
+   ]
+  },
+  {
+   "txid": "43c61b116cae49c2151f2a132162f9928d04e6b6036b88b6d5075d916121e7c7",
+   "height": 6475313,
+   "tx_index": 50,
+   "target": "6474180:51",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DFgGCRVEWQKxk72k6jmvHRMa3Wym1CR79e",
+   "expect": {
+    "ok": true,
+    "fuel_used": 16856,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474180:51",
+     "amount": "1"
+    }
+   ]
+  },
+  {
+   "txid": "74f329235ac5ef8a64989d8bdda6fc17a822747d9837532d3baaf141061cfee0",
+   "height": 6475313,
+   "tx_index": 52,
+   "target": "6474109:48",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DFgGCRVEWQKxk72k6jmvHRMa3Wym1CR79e",
+   "expect": {
+    "ok": true,
+    "fuel_used": 17941,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474109:48",
+     "amount": "1"
+    }
+   ]
+  },
+  {
+   "txid": "7c0ede6329b7ce88ba1964867e2b6ba56528ab6e2d35fd54bb153a0f58fd3d5b",
+   "height": 6475313,
+   "tx_index": 103,
+   "target": "6474109:48",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DKWnKff7cfqhRuwEMpwKuSr2nE5ZdBcD1U",
+   "expect": {
+    "ok": false,
+    "fuel_used": 9728,
+    "return_hex": "",
+    "error": "status 7"
+   },
+   "parcels_out": []
+  },
+  {
+   "txid": "c8f7b09562916f07c6990ef5222987b55fdd9fa889d1548fd3b3c47b2ae5252e",
+   "height": 6475313,
+   "tx_index": 51,
+   "target": "6474188:29",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 1000000,
+   "sender_address": "DFgGCRVEWQKxk72k6jmvHRMa3Wym1CR79e",
+   "expect": {
+    "ok": true,
+    "fuel_used": 14629,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474188:29",
+     "amount": "1"
+    }
+   ]
+  },
+  {
+   "txid": "1a2b349a706da7451589a2d07c0ede7f7de6588291dd5f40e27961cc191a1735",
+   "height": 6475327,
+   "tx_index": 6,
+   "target": "6474606:65",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "D8Hp4nzSMzTXQiQvbJdgmp4v2E8zSiu9ML",
+   "expect": {
+    "ok": true,
+    "fuel_used": 15553,
+    "return_hex": "",
+    "error": null
+   },
+   "parcels_out": [
+    {
+     "vout": 1,
+     "id": "6474606:65",
+     "amount": "10000"
+    }
+   ]
+  },
+  {
+   "txid": "3d4a1f3238d910108a1b415a1e3e8d633ba52c0cf85a2845f567f8aeafab530d",
+   "height": 6475327,
+   "tx_index": 8,
+   "target": "6474606:65",
+   "inputs": [
+    "77",
+    "1"
+   ],
+   "value": 0,
+   "sender_address": "DCMjKZjzKmrfCs1pS4mvDT2VjKXQXKoQVC",
+   "expect": {
+    "ok": false,
+    "fuel_used": 8360,
+    "return_hex": "",
+    "error": "status 7"
+   },
+   "parcels_out": []
+  }
+ ]
+}
