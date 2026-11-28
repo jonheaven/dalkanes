@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Clarifications only. No birth rule, receipt, or stored-key change; no indexer needs to reindex.
+
+- README status line now says v0.4.3 (it still said v0.4.1).
+- §20.1 writes the per-block lock test as `height < 6,475,700` / `height >= 6,475,700`, so the 6,475,700 boundary cannot be read as exclusive of that height.
+- §11: a derived index (per-address history, a listing of print slots) rolls back with the block, the same as the keys it was built from.
+- Appendix A: dry-run fuel follows §6.2 (omitted is `MAX_FUEL`; 0 grants 1); a dry run does not apply the residual live-block budget; a wallet should pass the fuel it will put in the cellpack; `incoming` on a pull is credited to the would-be print; a Dogecoin P2PKH `sender` is allowed beside `sender_hex`.
+
 ## 0.4.3 (2026-11-27)
 
 - §20.1: from height 6,475,700 a print program may birth more than one print in a block. The cap of 420 and one pull per verified sender stay. Below that height the per-block refusal stands, and those blocks are not replayed. Proof, Shibkane and Doge Orbital share it. The inscribed programs do not change.
