@@ -26,8 +26,8 @@
       "build": "Doge Orbital",
       "section": "23",
       "label": "doge",
-      "sha256": "aeafccfee33779532d930b86bfbd2fbb0e5519db072dc26e29888e3c4040a4c4",
-      "bytes": 61486,
+      "sha256": "119e9ce93d3c7291167fdc86ba74320c7926ba98b94fb23aad194fdafa70ffef",
+      "bytes": 18229,
       "mainnet": null,
       "print_program": true
     },

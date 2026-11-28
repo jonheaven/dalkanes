@@ -709,7 +709,7 @@ The card is not a field of the program and not a call. It lives beside the contr
 
 ## 23. Doge Orbital
 
-Doge Orbital is the site mark, kept as its own canonical bytecode. It is a print program (§20.1) when the SHA-256 of its wasm equals the Doge Orbital hash in §24, which is what `GET /api/alkanes/doge/build` returns. The build embeds the site's `doge.svg` with CRLF line ends; the published hash is of that build, whatever line ends a checkout uses. Opcode `77` births a print the same way it births a Proof, including the collection keys in §20 and the same refusal. A Doge Orbital collection births 420 prints, under the §20.1 gate: the cap, one pull per verified sender, and one pull per block only before height 6,475,700. The cap of each print is 1. Opcode `106` returns 420. Opcode `200` returns the face. The paths are the mark. The pull chooses a palette, and each coat color is that palette's tint of the original channel. Classic multiplies by 255, so the face is the mark as it ships. The darkest ink stays. Opcode `201` returns the palette. Opcode `202` returns the standards line, the collection, the index, and `palette`. A Doge Orbital is not a Shibkane and not a Proof.
+Doge Orbital is the site mark, kept as its own canonical bytecode. It is a print program (§20.1) when the SHA-256 of its wasm equals the Doge Orbital hash in §24, which is what `GET /api/alkanes/doge/build` returns. The build embeds the site mark with curves flattened so opcode `200`'s SVG fits in the 16,384-byte return (§6). A longer face is cut off and is not a picture. The published hash is of that build. Opcode `77` births a print the same way it births a Proof, including the collection keys in §20 and the same refusal. A Doge Orbital collection births 420 prints, under the §20.1 gate: the cap, one pull per verified sender, and one pull per block only before height 6,475,700. The cap of each print is 1. Opcode `106` returns 420. Opcode `200` returns the face. The paths are the mark. The pull chooses a palette, and each coat color is that palette's tint of the original channel. Classic multiplies by 255, so the face is the mark as it ships. The darkest ink stays. Opcode `201` returns the palette. Opcode `202` returns the standards line, the collection, the index, and `palette`. A Doge Orbital is not a Shibkane and not a Proof.
 
 | Byte | Below | Palette |
 | --- | --- | --- |
@@ -725,7 +725,7 @@ Only the print programs change state (§20.1). For every other row the hash only
 | --- | --- | --- | --- | --- | --- |
 | Proof (§20) | `proof` | `7c9b14ca1babaf1ee229f26a49b89e8d54e7ad86af6adc228492e273ec9e1694` | 8,728 | `6475242:19` | Print births (§20.1) |
 | Shibkane (§21) | `shibkane` | `b69f0aa9b8cd66335d1c08fa6c86d3af7d6b0def30c8d8688eff6ebefe9c71a4` | 7,412 | not inscribed | Print births (§20.1) |
-| Doge Orbital (§23) | `doge` | `aeafccfee33779532d930b86bfbd2fbb0e5519db072dc26e29888e3c4040a4c4` | 61,486 | not inscribed | Print births (§20.1) |
+| Doge Orbital (§23) | `doge` | `119e9ce93d3c7291167fdc86ba74320c7926ba98b94fb23aad194fdafa70ffef` | 18,229 | not inscribed | Print births (§20.1) |
 | Howl (§18) | `howl` | `5b9fa2476e0e669aa3126cbdb4c172c29a0685e5bc0e831411e96d7836a5a916` | 2,433 | `6474082:35` | Label |
 | Ash (§18) | `ash` | `0d48882f4c3a5a564e6a0db55d04daa5ef7c60b765e7cbe5965a4324133999f6` | 1,101 | `6474109:50` | Label |
 | Vigil (§18) | `vigil` | `9fa39d1c852c1113f25fbae64cb87ca628f1e151586e3c11db88c51d15548148` | 1,065 | `6474109:48` | Label |
@@ -747,7 +747,7 @@ The live Proof `6475242:19` is the Proof row. These hashes are not in the table.
 | `3cba3028` | A Shibkane body from 2026-11-26 |
 | `9e9bfc04` | A Shibkane body from 2026-11-26 |
 
-`7c9b14ca` is the current Proof row, not an earlier one. The Shibkane row is the capped build (opcode `106` returns 420). The Doge Orbital row is the build that embeds `doge.svg` with CRLF line ends. [vectors/canonical-builds.json](vectors/canonical-builds.json) is this table. The build routes in Appendix A return the same bytes. dogex and doginals.lol are not the public copy of these hashes.
+`7c9b14ca` is the current Proof row, not an earlier one. The Shibkane row is the capped build (opcode `106` returns 420). The Doge Orbital row is the build whose opcode `200` face fits in the 16,384-byte return. [vectors/canonical-builds.json](vectors/canonical-builds.json) is this table. The build routes in Appendix A return the same bytes. dogex and doginals.lol are not the public copy of these hashes.
 
 ## Appendix A. Indexer HTTP API *(informative)*
 
