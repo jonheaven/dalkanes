@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.3 (2026-11-27)
+
+- §20.1: from height 6,475,700 a print program may birth more than one print in a block. The cap of 420 and one pull per verified sender stay. Below that height the per-block refusal stands, and those blocks are not replayed. Proof, Shibkane and Doge Orbital share it. The inscribed programs do not change.
+
 ## 0.4.2 (2026-11-27)
 
 Answers for doginals.store / thedoginalsexplorer after their notes in pull request 3. No birth rule changes. An indexer that already follows §24 does not reindex.
