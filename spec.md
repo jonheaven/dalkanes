@@ -352,7 +352,7 @@ The Dogecoin transaction itself is always valid or invalid by Dogecoin's own rul
 
 - Dalkanes state SHOULD be fully determined by the active chain plus the pinned replay profile.
 - When a block is disconnected, an indexer MUST restore the state to exactly what it was before that block was applied. That means removing code and metadata deployed in the block, removing its receipts, and restoring every storage and ledger entry it changed, including deleting entries it created. A storage key holding an empty value is present, not absent: it MUST be restored as present and empty, and a key that was absent MUST be deleted. *(Informative: the reference records the keys that were absent before the block separately from their prior values. Undo records written by reference builds before v0.3 lack that list and fall back to treating an empty prior value as absent.)* Ledger entries are never stored as zero (§8), so for them an empty prior value means absent.
-- Parcels are state too: a disconnected block's spent outputs get their parcels back, the outputs it created lose theirs, and print ids it bore (§20) are removed with their code and metadata.
+- Parcels are state too: a disconnected block's spent outputs get their parcels back, the outputs it created lose theirs, and print ids it bore (§20) are removed with their code and metadata. Any derived index an indexer keeps from that state (per-address history, a listing of print slots) MUST be restored with the block, the same as the storage and ledger keys it was built from.
 - A block's Dalkanes effects MUST be committed atomically with the indexer's record of having processed that block.
 
 *(Informative)* Dogecoin targets a block about every 60 seconds under merged-mined AuxPoW. Applications SHOULD choose confirmation policies appropriate to reorg risk; this spec does not establish a settlement guarantee.
@@ -589,7 +589,7 @@ A **pull** is a call (§5, version `0x01` or `0x02`) whose target is a print pro
 
 1. **Refuse before execution** when any of these holds. Let `count` be the program's key `0x10` read as a little-endian u64 (absent is 0).
    - `count` is at least the collection cap: 420 for each of the three programs.
-   - This block's height is below 6,475,700, and the program's key `0x14`, read the same way, equals this block's height. From height 6,475,700 on, this check is not made. Several pulls of one program may succeed in that block, in transaction order. Blocks below 6,475,700 are left as indexed. There is no replay.
+   - This block's height is below 6,475,700 (that is, `height < 6,475,700`), and the program's key `0x14`, read the same way, equals this block's height. From height 6,475,700 on (`height >= 6,475,700`), this check is not made. Several pulls of one program may succeed in that block, in transaction order. Blocks below 6,475,700 are left as indexed. There is no replay.
    - The call has a verified sender (§6.5) and the program has key `0x15` followed by that 20-byte sender.
    - This transaction already created a contract id (a deploy, §4). One transaction has one id.
 
@@ -614,7 +614,7 @@ Opcode `77` on that program, with an output index, births a print. The print's i
 
 The pull requires a verified sender. It stores the block height, the transaction index, the block time, and the 20-byte sender, and it mints one unit of the print onto that output. The program is not inscribed again.
 
-A Proof collection births 420 prints. One pull per verified sender address (§20.1). Before height 6,475,700, also one pull per block. The indexer refuses the birth before execution when key `0x10` is already 420, when the height is below 6,475,700 and key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present. The receipt is `ok: false` and `fuel_used` is 0, with `the collection is full`, `this block already pulled`, or `this address already pulled`, and no new id. The block fuel budget is unchanged. A refused pull does not consume the block or the address. On a successful pull the indexer writes `0x14` as the height, u64 little-endian, and key `0x15` followed by the 20-byte sender, whose value is the single byte `0x01`. Opcode `106` returns 420. Shibkane uses this same gate, with the cap in §21.
+A Proof collection births 420 prints. One pull per verified sender address (§20.1). Before height 6,475,700, also one pull per block. The indexer refuses the birth before execution when key `0x10` is already 420, when the height is below 6,475,700 (`height < 6,475,700`) and key `0x14` is this block's height, or when key `0x15` followed by the 20-byte sender is present. The receipt is `ok: false` and `fuel_used` is 0, with `the collection is full`, `this block already pulled`, or `this address already pulled`, and no new id. The block fuel budget is unchanged. A refused pull does not consume the block or the address. On a successful pull the indexer writes `0x14` as the height, u64 little-endian, and key `0x15` followed by the 20-byte sender, whose value is the single byte `0x01`. Opcode `106` returns 420. Shibkane uses this same gate, with the cap in §21.
 
 Opcode `200` returns an SVG drawn only from that stored record. Opcode `201` returns the palette, the form, the cut when the form is a flower or a lattice, the plate, the caption, and the block, index, and time, from the same SHA-256. Before the pull, `200` returns a sheet marked unpulled and `201` says so. Views `99`–`102` are the name, the symbol, how many units this id has minted, and the cap of this id, which is 1.
 
@@ -766,7 +766,7 @@ The reference indexer serves these routes. They are not part of consensus:
 | `POST /api/alkanes/outputs` | Parcel balances on up to 500 outputs in one call (`{"outpoints": ["txid:vout", …]}`); returns only outputs that hold something. A wallet reads its holdings this way. |
 | `GET /api/alkanes/{block}/{tx}/holders` | Addresses holding the token on their outputs, largest first, with holder count, output count and circulating units. A holder is the address an output pays. |
 | `GET /api/alkanes/markets` | Recent deploys with kind, label, recent calls, holder count and circulating units, plus name, symbol, cap and minted for canonical builds (§17–§19). `card` and `deployer` are the project card (§22). `clone_of` is the inscribed program when this id is a print, and empty on the factory (§20) |
-| `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `incoming` and `sender_hex` (20-byte hex) overrides. Credits `incoming` to the contract's sheet first, as a real deposit would. Rejects malformed cells rather than dropping them. Returns per-contract `contract_writes` and the `outgoing` parcels a real call would place. A pull (§20.1) is specified in the paragraph after this table. |
+| `POST /api/alkanes/simulate` | Dry run against committed state. Accepts `value`, `fuel`, `incoming` and a sender override. Credits `incoming` to the contract's sheet first, as a real deposit would; for a pull (§20.1), that sheet is the would-be print's, not the program's. Rejects malformed cells rather than dropping them. Returns per-contract `contract_writes` and the `outgoing` parcels a real call would place. Fuel and a pull are specified in the paragraph after this table. |
 | `GET /api/alkanes/pool/build?leg0=&leg1=` | Canonical pool deploy body for a pair (§19) |
 | `GET /api/alkanes/proof/build` | Canonical Proof deploy body (§20) |
 | `GET /api/alkanes/shibkane/build` | Canonical Shibkane deploy body (§21) |
@@ -776,6 +776,10 @@ The reference indexer serves these routes. They are not part of consensus:
 | `POST /api/alkanes/launch/build` | Canonical fair-launch deploy body from name, symbol, cap, and mint size |
 
 A dry run of a pull applies the same pre-run refusals as a block (§20.1), then runs the program as the new id with the program as its caller and the print's storage empty. The response includes `born`. When the request does not set a height, `born` uses one past the last indexed height and transaction index 1. That id is a placeholder. The mined pull's id is its own `block:tx`. A dry run that answers `ok` for a block or an address the gate would refuse is wrong, and a wallet must not sign from it. A refused dry run has `ok: false`, `fuel_used` 0, and no `born`. This is not consensus. A block still applies §20.1 on its own.
+
+Dry-run fuel follows §6.2: the grant is `max(1, min(requested, MAX_FUEL))`. If the request omits `fuel`, the grant is `MAX_FUEL`. A requested fuel of 0 therefore grants 1, not the cap. The dry run is a single call with that grant, as if it were first in a new block; it does not consume, and does not apply, the residual budget of a block still being indexed. A wallet SHOULD pass the same fuel it will put in the cellpack, or a dry run at the 5,000,000 cap can look successful for a call that will be mined with less.
+
+The reference accepts `sender_hex` (20-byte hex). An implementation MAY also accept a Dogecoin P2PKH address as `sender`; both name the same 20-byte verified-sender payload (§6.5).
 
 ## Appendix B. Worked example
 
