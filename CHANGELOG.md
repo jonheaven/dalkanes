@@ -4,6 +4,7 @@
 
 Clarifications only. No birth rule or stored-key change.
 
+- §20 "Showing a print": a deploy list, contract index, and markets table show the factory once. Prints (`clone_of` set) hang on that collection and keep their own page. Activity still shows each birth.
 - Appendix A: a wallet must not broadcast a claim or a pull whose dry run, one block past the tip, would not count. A same-block slot refusal (status 7) does not hold the signature. An address that already claimed, or a full supply, does. A second broadcast waits until the first receipt is indexed.
 - §6.2: a §20.1 refusal is decided before the block-budget test. When both would apply, the receipt is the gate refusal and `R` is unchanged. `ok`, `fuel_used`, and `born` already match either order.
 - §6.3: an out-of-fuel trap records `fuel_used` as the grant, not 0. An indexer that stored 0 for those receipts diverges on a consensus field and has to replay those calls.
