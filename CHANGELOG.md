@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-Clarifications only. No birth rule, receipt, or stored-key change; no indexer needs to reindex.
+Clarifications only. No birth rule or stored-key change.
+
+- §6.2: a §20.1 refusal is decided before the block-budget test. When both would apply, the receipt is the gate refusal and `R` is unchanged. `ok`, `fuel_used`, and `born` already match either order.
+- §6.3: an out-of-fuel trap records `fuel_used` as the grant, not 0. An indexer that stored 0 for those receipts diverges on a consensus field and has to replay those calls.
 
 - README status line now says v0.4.3 (it still said v0.4.1).
 - §20.1 writes the per-block lock test as `height < 6,475,700` / `height >= 6,475,700`, so the 6,475,700 boundary cannot be read as exclusive of that height.

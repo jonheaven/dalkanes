@@ -169,7 +169,7 @@ Within a block, indexers MUST apply effects in this order:
 - Instruction fuel is the default fuel schedule of **`wasmi` 1.1.0** with `consume_fuel` enabled. The interpreter version is part of this spec: the reference pins the exact version (`wasmi = "=1.1.0"`), and changing it is a protocol change. Another implementation MUST reproduce wasmi 1.1.0's fuel accounting exactly.
 - Host functions charge the extra fuel listed in §7. If a host charge exceeds the remaining fuel, that is a fatal host error (§6.4).
 - **Block budget.** `BLOCK_FUEL_BUDGET` = **100,000,000** per block. It is a constant; there is no operator override. Let `R` be the budget left before a call (100,000,000 at the first call in the block). For each call whose target exists (§5.4), in transaction-index order:
-  - If `R` = 0, the call is not executed. Its receipt is `ok: false`, `fuel_used: 0`, with no state change (error `block fuel budget exhausted`).
+  - If `R` = 0, the call is not executed. Its receipt is `ok: false`, `fuel_used: 0`, with no state change (error `block fuel budget exhausted`). A pull that §20.1 refuses is decided before this test. That receipt is the §20.1 refusal even when `R` is 0, and `R` is unchanged. The budget test applies to a call that would otherwise run, including a pull the gate allowed.
   - Otherwise fuel granted = `min(max(1, min(fuel, MAX_FUEL)), R)`, and after the call `R` ← `R − fuel_used`.
   - Deploys, and messages that produce no receipt (§10), do not touch `R`. Nested calls draw from their top-level call's grant, not separately from `R`.
 - Budget is first come, first served in transaction order; there is no per-message minimum and no split by transaction size. Vectors: [vectors/block-fuel.json](vectors/block-fuel.json).
@@ -186,7 +186,7 @@ For each call, an indexer MUST:
 6. Otherwise, including a non-zero return, a trap or running out of fuel, discard every staged write.
 7. Record a receipt (§9) on both success and failure.
 
-`fuel_used` = granted fuel minus remaining fuel, at every exit once fuel has been granted: guest return, trap, and also instantiation or start-function failure, a missing `memory` or `__dalk_execute` export, and a failed calldata write. A start function's consumption is therefore always reported. Only a module that fails to decode (before instantiation) reports `fuel_used: 0`. A nested child's `fuel_used` is computed the same way and is deducted from its caller (§7.6).
+`fuel_used` = granted fuel minus remaining fuel, at every exit once fuel has been granted: guest return, trap, and also instantiation or start-function failure, a missing `memory` or `__dalk_execute` export, and a failed calldata write. A start function's consumption is therefore always reported. Only a module that fails to decode (before instantiation) reports `fuel_used: 0`. An out-of-fuel trap is a trap: remaining fuel is 0, so `fuel_used` is the grant, not 0. A nested child's `fuel_used` is computed the same way and is deducted from its caller (§7.6).
 
 ### 6.4 Fatal host errors
 
