@@ -755,7 +755,7 @@ The reference indexer serves these routes. They are not part of consensus:
 | --- | --- |
 | `GET /api/alkanes` | Recent deploys |
 | `GET /api/alkanes/{block}/{tx}` | Metadata, code hash and recent calls |
-| `GET /api/alkanes/{block}/{tx}/storage` | Storage peek |
+| `GET /api/alkanes/{block}/{tx}/storage` | Storage peek. `key_hex` returns that one key: `value_hex` is the bytes, or null when the key is absent |
 | `GET /api/alkanes/{block}/{tx}/inspect` | ABI-aware read methods, for known templates |
 | `GET /api/alkanes/calls[?target=block:tx]`, `GET /api/alkanes/calls/{txid}` | Receipts, newest first (by height and transaction index, not txid) |
 | `GET /api/alkanes/events?limit&before=height:tx` | Every transaction that touched Dalkanes, newest first: the message kind, parcels spent, routed, burned and deposited, parcels a call issued, the receipt, and the owner address of each output |
@@ -776,6 +776,8 @@ The reference indexer serves these routes. They are not part of consensus:
 | `POST /api/alkanes/launch/build` | Canonical fair-launch deploy body from name, symbol, cap, and mint size |
 
 A dry run of a pull applies the same pre-run refusals as a block (§20.1), then runs the program as the new id with the program as its caller and the print's storage empty. The response includes `born`. When the request does not set a height, `born` uses one past the last indexed height and transaction index 1. That id is a placeholder. The mined pull's id is its own `block:tx`. A dry run that answers `ok` for a block or an address the gate would refuse is wrong, and a wallet must not sign from it. A refused dry run has `ok: false`, `fuel_used` 0, and no `born`. This is not consensus. A block still applies §20.1 on its own.
+
+A wallet MUST NOT broadcast a claim or a pull when a dry run for that sender, at one past the indexed tip, is not ok. The fee is spent either way: Dogecoin confirms the transaction, and the program or the gate mints nothing. Two refusals are not a reason to hold the signature, because the transaction is mined in a later block: `this block already claimed`, `this block already pulled`, and status 7. The address refusal (status 5, `this address already claimed`, `this address already pulled`) and a full supply (status 6, `the collection is full`) are. A wallet that has broadcast a claim for that sender and target, and has not yet seen its receipt, MUST NOT broadcast another. The program refusing inside the wasm does not save the fee. The check has to happen before the signature.
 
 Dry-run fuel follows §6.2: the grant is `max(1, min(requested, MAX_FUEL))`. If the request omits `fuel`, the grant is `MAX_FUEL`. A requested fuel of 0 therefore grants 1, not the cap. The dry run is a single call with that grant, as if it were first in a new block; it does not consume, and does not apply, the residual budget of a block still being indexed. A wallet SHOULD pass the same fuel it will put in the cellpack, or a dry run at the 5,000,000 cap can look successful for a call that will be mined with less.
 
